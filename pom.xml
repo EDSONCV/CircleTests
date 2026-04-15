@@ -1,0 +1,37 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <properties>
+        <!-- Sets the Java version for both source and target -->
+        <maven.compiler.release>17</maven.compiler.release>
+
+        <!-- Legacy way (required for Java 8 or older)
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>-->
+    </properties>
+
+    <groupId>br.ufrgs.licv.circletests</groupId>
+    <artifactId>Circle-Tests</artifactId>
+    <version>0.0.1</version>
+    <name>Circle Tests</name>
+    <dependencies>
+        <!-- Source: https://mvnrepository.com/artifact/org.opencv/opencv
+        <dependency>
+            <groupId>org.opencv</groupId>
+            <artifactId>opencv</artifactId>
+            <version>4.10.0</version>
+            <scope>compile</scope>
+        </dependency>
+        -->
+        <!-- Source: https://mvnrepository.com/artifact/org.bytedeco/opencv -->
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>opencv</artifactId>
+            <version>4.10.0-1.5.11</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+</project>

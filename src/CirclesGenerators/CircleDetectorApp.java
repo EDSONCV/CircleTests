@@ -174,7 +174,7 @@ public class CircleDetectorApp extends JFrame {
             Imgproc.cvtColor(originalImage, grayImage, Imgproc.COLOR_BGR2GRAY);
 
             // 2. Pre-processing: Blur to reduce noise (Important for Hough)
-            Imgproc.GaussianBlur(grayImage, grayImage, new Size(9, 9), 2, 2);
+            Imgproc.GaussianBlur(grayImage, grayImage, new Size(7, 7), 1, 1);
 
             // 3. Apply Hough Circles
             Mat circles = new Mat();

@@ -9,7 +9,7 @@ import org.opencv.imgproc.Imgproc;
 
 // --- Filtro 1: Gaussian Blur ---
 public class GaussianBlurFilter implements ImageFilter {
-    private OptParam kernel = new OptParam("G_Kernel", 5, 1, 5, 2, true);
+    private OptParam kernel = new OptParam("G_Kernel", 5, 1, 9, 2, true);
     private OptParam sigma = new OptParam("G_Sigma", 2.0, 0.5, 3, 0.5, false);
 
     @Override
