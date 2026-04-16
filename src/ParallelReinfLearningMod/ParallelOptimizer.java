@@ -35,6 +35,8 @@ public class ParallelOptimizer {
         // O batch size define quantas variantes testamos por rodada
         // Se temos 8 threads, podemos testar 8, 16 ou 32 variantes por vez.
         int batchSize = threadCount * 2; 
+        double globalBestReward = -Double.MAX_VALUE;
+        int episodesWithoutImprovement = 0; // Contador de estagnação
 
         for (int i = 0; i < totalEpisodes; i++) {
             List<Callable<SimulationResult>> tasks = new ArrayList<>();
@@ -77,25 +79,69 @@ public class ParallelOptimizer {
                 }
 
                 // 4. Tomada de Decisão (Consolidação)
-                if (bestOfBatch != null) {
+ /*               if (bestOfBatch != null) {
                 	// Formata a lista de parâmetros: "Nome=Valor, Nome=Valor..."
                     String formattedParams = bestOfBatch.usedParams.stream()
                         .map(OptParam::toString) // Chama o toString() de cada parâmetro (ex: "G_Kernel=5")
                         .collect(Collectors.joining(", "));
 
                     // Imprime cabeçalho do Batch
-                    System.out.printf("Batch %3d | Reward: %8.1f | Círculos: %3d | Thread: %s%n", 
-                            i, 
-                            bestOfBatch.reward, 
-                            bestOfBatch.detectedCircles.size(), 
+                    System.out.printf("Batch %3d | Reward: %8.1f | Círculos: %3d | Thread: %s%n",
+                            i,
+                            bestOfBatch.reward,
+                            bestOfBatch.detectedCircles.size(),
                             bestOfBatch.workerName);
-                    
+
                     // Imprime os parâmetros usados nessa melhor rodada
                     System.out.println("   >> Params: " + formattedParams);
-                    
+
                     // Atualiza o melhor global se necessário (Código existente...)
-                    if (bestOfBatch.reward > -50) { 
+                    if (bestOfBatch.reward > -50) {
                          this.currentBestParams = bestOfBatch.usedParams;
+                    }
+                }*/
+                if (bestOfBatch != null) {
+                	// Formata a lista de parâmetros: "Nome=Valor, Nome=Valor..."
+                    double currentMeanIoU = env.calculateMeanIoU(bestOfBatch.detectedCircles);
+                    String formattedParams = bestOfBatch.usedParams.stream()
+                        .map(OptParam::toString) // Chama o toString() de cada parâmetro (ex: "G_Kernel=5")
+                        .collect(Collectors.joining(", "));
+                    // Imprime o output no console
+                    System.out.printf("Batch %3d | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | Thread: %s%n",
+                            i,
+                            bestOfBatch.reward,
+                            bestOfBatch.detectedCircles.size(),
+                            currentMeanIoU,                 // <--- Variável adicionada
+                            bestOfBatch.workerName);
+
+                    System.out.println("   >> Params: " + formattedParams);
+
+                    // --- VERIFICAÇÃO DE MELHORIA GLOBAL ---
+                    if (bestOfBatch.reward > globalBestReward) {
+                        globalBestReward = bestOfBatch.reward;
+                        this.currentBestParams = bestOfBatch.usedParams;
+                        episodesWithoutImprovement = 0; // Zera o contador pois houve melhoria
+                    } else {
+                        episodesWithoutImprovement++; // Incrementa se não melhorou
+                    }
+
+                    // --- CRITÉRIO DE PARADA 1: OBJETIVO ALCANÇADO ---
+                    // Verifica com o ambiente se esta detecção foi 100% precisa
+                    if (env.isGoalReached(bestOfBatch.detectedCircles)) {
+                        System.out.println("\n✅ CRITÉRIO DE PARADA ATINGIDO!");
+                        System.out.println("Todos os círculos foram encontrados com Centro (tol: "
+                            + env.getRewardConfig().getStopToleranceCenter() + ") e Raio (tol: "
+                            + env.getRewardConfig().getStopToleranceRadius() + ") previstos corretamente.");
+                        break; // Sai do loop 'for' imediatamente
+                    }
+
+                    // --- CRITÉRIO DE PARADA 2: ESTAGNAÇÃO (PLATEAU) ---
+                    if (episodesWithoutImprovement >= env.getRewardConfig().getPatienceLimit()) {
+                        System.out.println("\n⚠️ PARADA POR ESTAGNAÇÃO (EARLY STOPPING)!");
+                        System.out.println("O algoritmo rodou " + env.getRewardConfig().getPatienceLimit()
+                            + " episódios sem encontrar uma recompensa melhor.");
+                        System.out.println("Assumindo convergência para o melhor resultado possível localmente.");
+                        break; // Sai do loop 'for' imediatamente
                     }
                 }
                 

@@ -98,7 +98,7 @@ public class ResultVisualizerCompare extends JFrame {
                 "Det_X", "Det_Y", "Det_Raio",
                 "Ref_X", "Ref_Y", "Ref_Raio",
                 "Erro_X", "Erro_Y", "Erro_Raio",
-                "Distância_Euclidiana"
+                "Distância_Euclidiana","IoU"
         };
 
         DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
@@ -188,7 +188,7 @@ public class ResultVisualizerCompare extends JFrame {
                 String csvFileName = basePath + "Metricas_Erro_Circulos.csv";
                 try (PrintWriter writer = new PrintWriter(new File(csvFileName))) {
                     // Cabeçalho do CSV
-                    writer.println("ID;Det_X;Det_Y;Det_Raio;Ref_X;Ref_Y;Ref_Raio;Erro_X;Erro_Y;Erro_Raio;Distancia_Euclidiana");
+                    writer.println("ID;Det_X;Det_Y;Det_Raio;Ref_X;Ref_Y;Ref_Raio;Erro_X;Erro_Y;Erro_Raio;Distancia_Euclidiana;IoU");
 
                     for (Object[] row : metricRows) {
                         // Substitui a vírgula do formato europeu por ponto, e usa vírgula como delimitador
@@ -199,8 +199,8 @@ public class ResultVisualizerCompare extends JFrame {
                                 row[7].toString().replace(",", "."), row[8].toString().replace(",", "."), row[9].toString().replace(",", "."),
                                 row[10].toString().replace(",", ".")
                         );*/
-                        String line = String.format("%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s",
-                                row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10]
+                        String line = String.format("%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s",
+                                row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10],row[11]
                         );
                         writer.println(line);
                     }
@@ -430,6 +430,7 @@ public class ResultVisualizerCompare extends JFrame {
     private void calculateMetrics() {
         metricRows = new ArrayList<>();
 
+    /*
         for (int i = 0; i < finalCircles.size(); i++) {
             Circle det = finalCircles.get(i);
             Circle bestMatch = null;
@@ -457,6 +458,39 @@ public class ResultVisualizerCompare extends JFrame {
                         String.format("%.1f", bestMatch.x), String.format("%.1f", bestMatch.y), String.format("%.1f", bestMatch.r),
                         String.format("%.2f", errX), String.format("%.2f", errY), String.format("%.2f", errR),
                         String.format("%.2f", minDistance)
+                });
+            }
+        }
+    */
+        for (int i = 0; i < finalCircles.size(); i++) {
+            Circle det = finalCircles.get(i);
+            Circle bestMatch = null;
+            double maxIou = 0.0;
+            double distAtMaxIou = 0.0;
+
+            // Encontra o Ground Truth pelo MAIOR IoU
+            for (Circle gt : groundTruth) {
+                double iou = det.getIoU(gt);
+                if (iou > maxIou) {
+                    maxIou = iou;
+                    bestMatch = gt;
+                    distAtMaxIou = Math.sqrt(Math.pow(det.x - gt.x, 2) + Math.pow(det.y - gt.y, 2));
+                }
+            }
+
+            if (bestMatch != null) {
+                double errX = Math.abs(det.x - bestMatch.x);
+                double errY = Math.abs(det.y - bestMatch.y);
+                double errR = Math.abs(det.r - bestMatch.r);
+
+                // Adicionamos o IoU no final do array de métricas
+                metricRows.add(new Object[]{
+                        (i + 1),
+                        String.format("%.1f", det.x), String.format("%.1f", det.y), String.format("%.1f", det.r),
+                        String.format("%.1f", bestMatch.x), String.format("%.1f", bestMatch.y), String.format("%.1f", bestMatch.r),
+                        String.format("%.2f", errX), String.format("%.2f", errY), String.format("%.2f", errR),
+                        String.format("%.2f", distAtMaxIou),
+                        String.format("%.4f", maxIou) // <--- NOVA COLUNA IoU
                 });
             }
         }

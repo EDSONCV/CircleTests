@@ -27,6 +27,22 @@ public class RewardConfig {
     // Tolerância Geométrica
     private double positionTolerance = 15.0;    // Distância máxima em pixels para considerar "Match"
 
+ // Tolerância em pixels para considerar o centro perfeito
+    private double stopToleranceCenter = 1.0;
+
+    // Tolerância em pixels para considerar o raio perfeito
+    private double stopToleranceRadius = 1.0;
+
+    // 0.50 (50%) é o padrão clássico em artigos acadêmicos (ex: PASCAL VOC).
+    // Para medições industriais estritas, usa-se 0.75 ou 0.80.
+    private double iouThreshold = 0.50;
+
+    // Quantas rodadas seguidas sem melhoria o algoritmo deve tolerar antes de desistir
+    private int patienceLimit = 20;
+
+    // Nota média global (mIoU) necessária para parar o algoritmo por "Sucesso" (Padrão: 95%)
+    private double targetMeanIoU = 0.95;
+
     // --- Construtor Padrão (com valores default) ---
     public RewardConfig() {}
 
@@ -64,4 +80,24 @@ public class RewardConfig {
 
     public double getPositionTolerance() { return positionTolerance; }
     public void setPositionTolerance(double positionTolerance) { this.positionTolerance = positionTolerance; }
+    public double getStopToleranceCenter() { return stopToleranceCenter; }
+    public void setStopToleranceCenter(double stopToleranceCenter) { this.stopToleranceCenter = stopToleranceCenter; }
+
+
+    public double getIouThreshold() { return iouThreshold; }
+    public void setIouThreshold(double iouThreshold) { this.iouThreshold = iouThreshold; }
+
+    public double getTargetMeanIoU() {
+        return targetMeanIoU;
+    }
+
+    public void setTargetMeanIoU(double targetMeanIoU) {
+        this.targetMeanIoU = targetMeanIoU;
+    }
+
+    public double getStopToleranceRadius() { return stopToleranceRadius; }
+    public void setStopToleranceRadius(double stopToleranceRadius) { this.stopToleranceRadius = stopToleranceRadius; }
+
+    public int getPatienceLimit() { return patienceLimit; }
+    public void setPatienceLimit(int patienceLimit) { this.patienceLimit = patienceLimit; }
 }

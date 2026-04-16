@@ -972,10 +972,14 @@ public class ParallelModularCircleDetector {
         myConfig.setNoisePenalty(-5.0);         // Ruído é mais grave que o padrão
         myConfig.setSanityLimitAbsolute(900);    // Se passar de 30 círculos, aborte
         myConfig.setExcessPenaltyExponent(2.0); // Punição quadrática rigorosa
-        
+		myConfig.setPositionTolerance(2); // Tolerance for position and radius mismatch
+		myConfig.setIouThreshold(0.95);
+		myConfig.setTargetMeanIoU(0.98);
+		myConfig.setPatienceLimit(50);
+
         // 4. Injeta a configuração no Ambiente
-        String imagePath ="src/matrix_output.png";
-		//String imagePath ="src/matrix_output_thin.png";
+        //String imagePath ="src/matrix_output.png";
+		String imagePath ="src/matrix_output_thin.png";
         ModularEnvironment env = new ModularEnvironment(imagePath, groundTruth, pipeline, myConfig);
      // --- 5. CONFIGURAÇÃO DE MULTITHREADING ---
         // Opção A: Automático (Núcleos lógicos - 1 para deixar o OS respirar)
@@ -996,7 +1000,7 @@ public class ParallelModularCircleDetector {
         
         // Executa a otimização (Bloqueante - vai demorar alguns segundos/minutos)
         // Retorna a lista dos melhores parâmetros encontrados
-        List<OptParam> bestParams = optimizer.runOptimization(1000); // 500 Episódios (Batches)
+        List<OptParam> bestParams = optimizer.runOptimization(100); // 500 Episódios (Batches)
 
         System.out.println("=== Otimização Finalizada ===");
         System.out.println("Melhores Parâmetros: " + bestParams);
