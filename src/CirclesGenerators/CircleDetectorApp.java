@@ -178,7 +178,7 @@ public class CircleDetectorApp extends JFrame {
 
             // 3. Apply Hough Circles
             Mat circles = new Mat();
-            Imgproc.HoughCircles(grayImage, circles, Imgproc.HOUGH_GRADIENT, 
+            Imgproc.HoughCircles(grayImage, circles, Imgproc.HOUGH_GRADIENT_ALT,
                                  dp, minDist, param1, param2, minRadius, maxRadius);
 
             // 4. Draw results and update table

@@ -73,7 +73,7 @@ public class ModularEnvironment {
         try {
             // B. Executa HoughCircles
             // Note que usamos 'pipeToUse' (local), não 'this.pipelinePrototype'
-            Imgproc.HoughCircles(processedImage, circlesMat, Imgproc.HOUGH_GRADIENT,
+            Imgproc.HoughCircles(processedImage, circlesMat, Imgproc.HOUGH_GRADIENT_ALT,
                 pipeToUse.getDp(), 
                 pipeToUse.getMinDist(),
                 pipeToUse.getParam1(), 

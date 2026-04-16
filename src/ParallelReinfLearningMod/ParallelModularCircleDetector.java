@@ -974,7 +974,8 @@ public class ParallelModularCircleDetector {
         myConfig.setExcessPenaltyExponent(2.0); // Punição quadrática rigorosa
         
         // 4. Injeta a configuração no Ambiente
-        String imagePath ="src/matrix_output_thin.png";
+        String imagePath ="src/matrix_output.png";
+		//String imagePath ="src/matrix_output_thin.png";
         ModularEnvironment env = new ModularEnvironment(imagePath, groundTruth, pipeline, myConfig);
      // --- 5. CONFIGURAÇÃO DE MULTITHREADING ---
         // Opção A: Automático (Núcleos lógicos - 1 para deixar o OS respirar)
