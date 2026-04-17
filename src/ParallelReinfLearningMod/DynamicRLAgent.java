@@ -39,6 +39,16 @@ class DynamicRLAgent {
                 .orElse(randomAction());
     }
 
+    /**
+     * Força o agente a abandonar o conhecimento atual temporariamente
+     * e tomar decisões radicalmente aleatórias para escapar de um ótimo local.
+     */
+    public void triggerExplorationBurst() {
+        // Volta a taxa de exploração para 90% (ações totalmente aleatórias)
+        this.epsilon = 0.90;
+        System.out.println("   [Agente RL] Taxa de exploração resetada para 90%!");
+    }
+
  // Certifique-se que o método randomAction é público ou acessível internamente
     private String randomAction() {
         if (managedParams.isEmpty()) return "0_UP"; // Fallback

@@ -18,6 +18,7 @@ public class ParallelOptimizer {
     // Estado atual (Melhores parâmetros conhecidos)
     private List<OptParam> currentBestParams;
 
+
     public ParallelOptimizer(int threadCount, ModularEnvironment env, List<OptParam> initialParams) {
         this.threadCount = threadCount;
         this.env = env;
@@ -30,133 +31,159 @@ public class ParallelOptimizer {
     }
 
     public List<OptParam> runOptimization(int totalEpisodes) {
-        System.out.println("Iniciando Otimização Paralela com " + threadCount + " threads.");
+        System.out.println("Iniciando Otimização Paralela...");
+        int batchSize = threadCount * 2;
 
-        // O batch size define quantas variantes testamos por rodada
-        // Se temos 8 threads, podemos testar 8, 16 ou 32 variantes por vez.
-        int batchSize = threadCount * 2; 
         double globalBestReward = -Double.MAX_VALUE;
-        int episodesWithoutImprovement = 0; // Contador de estagnação
+        int episodesWithoutImprovement = 0;
+
+        // [PASSO DO ELITISMO]: Criação do "Cofre"
+        // Inicializa o cofre com os parâmetros padrão para não começar vazio
+        List<OptParam> absoluteBestParams = deepCopyParams(this.currentBestParams);
 
         for (int i = 0; i < totalEpisodes; i++) {
             List<Callable<SimulationResult>> tasks = new ArrayList<>();
 
-            // 1. Gerar Batch de Cenários (Exploração Paralela)
-            for (int k = 0; k < batchSize; k++) {
-                // Para cada tarefa, pegamos o estado base e aplicamos uma ação diferente
-                // Clonamos os parâmetros base para não afetar o original
-                List<OptParam> candidateParams = deepCopyParams(currentBestParams);
-                
-                // Agente escolhe uma ação (Exploração ou Exploitation)
-                // Nota: Precisamos adaptar o agente para sugerir ações sem comprometer o estado ainda
-                String action = agent.chooseActionForSim(k); 
+            // Prepara as tarefas para as threads
+            /*for (int k = 0; k < batchSize; k++) {
+                List<OptParam> candidateParams = deepCopyParams(this.currentBestParams);
+                String action = agent.chooseActionForSim(k);
                 applyActionToParams(candidateParams, action);
+                tasks.add(new SimulationTask(env, candidateParams, "Worker-" + (k % threadCount)));
+            }*/
+            // Dentro do for loop que cria as tasks no ParallelOptimizer:
+            for (int k = 0; k < batchSize; k++) {
+                List<OptParam> candidateParams = deepCopyParams(this.currentBestParams);
+                String action = agent.chooseActionForSim(k);
+
+                // Aplica a ação do Agente
+                applyActionToParams(candidateParams, action);
+
+                // --- NOVO CÓDIGO: VERIFICA SE BATEU NO LIMITE (Ficou igual) ---
+                boolean isIdentical = true;
+                for (int p = 0; p < candidateParams.size(); p++) {
+                    if (candidateParams.get(p).getValue() != this.currentBestParams.get(p).getValue()) {
+                        isIdentical = false;
+                        break;
+                    }
+                }
+
+                // Se a ação não fez nada (bateu no limite), forçamos uma mutação aleatória num parâmetro
+                if (isIdentical) {
+                    int randomParamIndex = (int) (Math.random() * candidateParams.size());
+                    OptParam paramToMutate = candidateParams.get(randomParamIndex);
+
+                    // Muta para cima ou para baixo aleatoriamente
+                    if (Math.random() > 0.5) {
+                        paramToMutate.increase();
+                    } else {
+                        paramToMutate.decrease();
+                    }
+                }
+                // -------------------------------------------------------------
 
                 tasks.add(new SimulationTask(env, candidateParams, "Worker-" + (k % threadCount)));
             }
 
             try {
-                // 2. O Gerenciador ESPERA todas as avaliações chegarem (Sincronização)
+                // Executa as threads
                 List<Future<SimulationResult>> futures = executor.invokeAll(tasks);
-
                 SimulationResult bestOfBatch = null;
 
-                // 3. Processa os resultados
                 for (Future<SimulationResult> future : futures) {
-                    SimulationResult result = future.get(); // Bloqueia até obter resultado
-                    
-                    // Registra performance
-                    monitor.record(result.workerName, result.executionTimeNano);
-
-                    // Lógica de Decisão do Gerenciador:
-                    // Verifica se algum worker encontrou um resultado melhor que o atual
+                    SimulationResult result = future.get();
                     if (bestOfBatch == null || result.reward > bestOfBatch.reward) {
                         bestOfBatch = result;
                     }
-                    
-                    // Opcional: Treinar o agente com TODOS os resultados (Off-policy learning)
-                    // agent.learnFromSample(...);
                 }
 
-                // 4. Tomada de Decisão (Consolidação)
- /*               if (bestOfBatch != null) {
-                	// Formata a lista de parâmetros: "Nome=Valor, Nome=Valor..."
-                    String formattedParams = bestOfBatch.usedParams.stream()
-                        .map(OptParam::toString) // Chama o toString() de cada parâmetro (ex: "G_Kernel=5")
-                        .collect(Collectors.joining(", "));
-
-                    // Imprime cabeçalho do Batch
-                    System.out.printf("Batch %3d | Reward: %8.1f | Círculos: %3d | Thread: %s%n",
-                            i,
-                            bestOfBatch.reward,
-                            bestOfBatch.detectedCircles.size(),
-                            bestOfBatch.workerName);
-
-                    // Imprime os parâmetros usados nessa melhor rodada
-                    System.out.println("   >> Params: " + formattedParams);
-
-                    // Atualiza o melhor global se necessário (Código existente...)
-                    if (bestOfBatch.reward > -50) {
-                         this.currentBestParams = bestOfBatch.usedParams;
-                    }
-                }*/
+                // Avalia os resultados da Batch
                 if (bestOfBatch != null) {
-                	// Formata a lista de parâmetros: "Nome=Valor, Nome=Valor..."
                     double currentMeanIoU = env.calculateMeanIoU(bestOfBatch.detectedCircles);
-                    String formattedParams = bestOfBatch.usedParams.stream()
-                        .map(OptParam::toString) // Chama o toString() de cada parâmetro (ex: "G_Kernel=5")
-                        .collect(Collectors.joining(", "));
-                    // Imprime o output no console
-                    System.out.printf("Batch %3d | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | Thread: %s%n",
-                            i,
-                            bestOfBatch.reward,
-                            bestOfBatch.detectedCircles.size(),
-                            currentMeanIoU,                 // <--- Variável adicionada
-                            bestOfBatch.workerName);
 
+                    //System.out.printf("Batch %3d | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | Thread: %s%n",
+                    //        i, bestOfBatch.reward, bestOfBatch.detectedCircles.size(), currentMeanIoU, bestOfBatch.workerName);
+
+                    // --- 1. RECUPERA A FORMATAÇÃO DOS PARÂMETROS ---
+                    String formattedParams = bestOfBatch.usedParams.stream()
+                            .map(OptParam::toString)
+                            .collect(java.util.stream.Collectors.joining(", "));
+
+                    // --- 2. IMPRIME O BATCH COM O mIoU ---
+                    System.out.printf("Batch %3d | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | Thread: %s%n",
+                            i, bestOfBatch.reward, bestOfBatch.detectedCircles.size(), currentMeanIoU, bestOfBatch.workerName);
+
+                    // --- 3. IMPRIME OS PARÂMETROS LOGO ABAIXO ---
                     System.out.println("   >> Params: " + formattedParams);
 
-                    // --- VERIFICAÇÃO DE MELHORIA GLOBAL ---
+
+
+
+                    // --- VERIFICAÇÃO DE RECORDE GLOBAL ---
                     if (bestOfBatch.reward > globalBestReward) {
                         globalBestReward = bestOfBatch.reward;
-                        this.currentBestParams = bestOfBatch.usedParams;
-                        episodesWithoutImprovement = 0; // Zera o contador pois houve melhoria
+
+                        // Atualiza o explorador para a próxima rodada
+                        this.currentBestParams = deepCopyParams(bestOfBatch.usedParams);
+
+                        // [PASSO DO ELITISMO]: Salva no Cofre de Ouro!
+                        absoluteBestParams = deepCopyParams(bestOfBatch.usedParams);
+
+                        episodesWithoutImprovement = 0; // Zera a estagnação
                     } else {
-                        episodesWithoutImprovement++; // Incrementa se não melhorou
+                        episodesWithoutImprovement++;
+                    }
+
+                    // --- [PASSO DO SALTO EXPLORATÓRIO] ---
+                    int patienceLimit = env.getRewardConfig().getPatienceLimit();
+
+                    // Aciona o pulo quando a estagnação chegar na metade do limite de paciência
+                    if (episodesWithoutImprovement == (patienceLimit / 2)) {
+                        System.out.println("\n⚠️ ESTAGNAÇÃO DETECTADA! Iniciando Salto Exploratório Radical...");
+
+                        // Diz para o agente RL voltar a ser aleatório (se tiver implementado)
+                        agent.triggerExplorationBurst();
+
+                        // Embaralha o explorador, mas o 'absoluteBestParams' continua salvo!
+                        scrambleParameters(this.currentBestParams);
                     }
 
                     // --- CRITÉRIO DE PARADA 1: OBJETIVO ALCANÇADO ---
-                    // Verifica com o ambiente se esta detecção foi 100% precisa
                     if (env.isGoalReached(bestOfBatch.detectedCircles)) {
-                        System.out.println("\n✅ CRITÉRIO DE PARADA ATINGIDO!");
-                        System.out.println("Todos os círculos foram encontrados com Centro (tol: "
-                            + env.getRewardConfig().getStopToleranceCenter() + ") e Raio (tol: "
-                            + env.getRewardConfig().getStopToleranceRadius() + ") previstos corretamente.");
-                        break; // Sai do loop 'for' imediatamente
+                        System.out.println("\n✅ CRITÉRIO DE PARADA ATINGIDO (mIoU Excelente)!");
+                        break;
                     }
 
-                    // --- CRITÉRIO DE PARADA 2: ESTAGNAÇÃO (PLATEAU) ---
-                    if (episodesWithoutImprovement >= env.getRewardConfig().getPatienceLimit()) {
-                        System.out.println("\n⚠️ PARADA POR ESTAGNAÇÃO (EARLY STOPPING)!");
-                        System.out.println("O algoritmo rodou " + env.getRewardConfig().getPatienceLimit()
-                            + " episódios sem encontrar uma recompensa melhor.");
-                        System.out.println("Assumindo convergência para o melhor resultado possível localmente.");
-                        break; // Sai do loop 'for' imediatamente
+                    // --- CRITÉRIO DE PARADA 2: DESISTÊNCIA (PLATEAU) ---
+                    if (episodesWithoutImprovement >= patienceLimit) {
+                        System.out.println("\n🛑 PARADA DEFINITIVA POR ESTAGNAÇÃO.");
+                        break;
                     }
                 }
-                
-                
-                // Debug de Performance a cada 10 rodadas
-                if (i % 10 == 0) monitor.printStats();
-
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        
+
         executor.shutdown();
-        System.out.println("Otimização Encerrada.");
-        return this.currentBestParams;
+
+        // [PASSO DO ELITISMO]: Retorna a variável do Cofre, nunca o Explorador!
+        return absoluteBestParams;
+    }
+
+    /**
+     * Aplica uma mutação aleatória forte nos parâmetros atuais para tirá-los do buraco.
+     */
+    private void scrambleParameters(List<OptParam> params) {
+        for (OptParam p : params) {
+            // 30% de chance de mudar radicalmente cada parâmetro
+            if (Math.random() < 0.3) {
+                double range = p.getMax() - p.getMin();
+                // Joga o parâmetro para um valor aleatório dentro do limite dele
+                double newValue = p.getMin() + (Math.random() * range);
+                p.setValue(newValue);
+            }
+        }
     }
     
     /**
