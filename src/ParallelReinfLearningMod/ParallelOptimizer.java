@@ -14,6 +14,10 @@ public class ParallelOptimizer {
     private PerformanceMonitor monitor;
     private ModularEnvironment env;
     private DynamicRLAgent agent;
+    private boolean verboseMode = false;
+    private boolean logResults = false;
+    private String logFileName = "Historico_Exploracao_RL.csv";
+    private List<String> explorationHistory; // <--- NOVA VARIÁVEL
     
     // Estado atual (Melhores parâmetros conhecidos)
     private List<OptParam> currentBestParams;
@@ -28,14 +32,20 @@ public class ParallelOptimizer {
         // Cria pool de threads configurável
         this.executor = Executors.newFixedThreadPool(threadCount);
         this.agent = new DynamicRLAgent(currentBestParams);
+        this.explorationHistory = new ArrayList<>();
+        // Define o cabeçalho do arquivo CSV
+        this.explorationHistory.add("Batch,Thread,Tempo_ms,Reward,Círculos encontrados,mIoU,Parametros");
     }
 
     public List<OptParam> runOptimization(int totalEpisodes) {
         System.out.println("Iniciando Otimização Paralela...");
-        int batchSize = threadCount * 2;
-
+        //int batchSize = threadCount * 2;
+        // we use 1:1 thread relation, but can be used a 1:2 to promoted efficiency
+        int batchSize = threadCount ;
         double globalBestReward = -Double.MAX_VALUE;
         int episodesWithoutImprovement = 0;
+        int globalBestCircles = 0;
+        double globalBestIoU = 0.0;
 
         // [PASSO DO ELITISMO]: Criação do "Cofre"
         // Inicializa o cofre com os parâmetros padrão para não começar vazio
@@ -90,13 +100,48 @@ public class ParallelOptimizer {
                 List<Future<SimulationResult>> futures = executor.invokeAll(tasks);
                 SimulationResult bestOfBatch = null;
 
+                if (verboseMode) {
+                    System.out.println("   --- Detalhes das Threads (Batch " + i + ") ---");
+                }
+
                 for (Future<SimulationResult> future : futures) {
                     SimulationResult result = future.get();
+
+                    // 1. Cálculos de métricas da Thread
+                    double timeMs = result.executionTimeNano / 1_000_000.0;
+                    double threadIoU = env.calculateMeanIoU(result.detectedCircles);
+                    int circulosEncontrados = result.detectedCircles.size(); // <-- Captura os círculos
+
+                    // Usamos ponto e vírgula (;) para separar os parâmetros,
+                    // garantindo que não quebre as colunas do arquivo CSV!
+                    String threadParams = result.usedParams.stream()
+                            .map(OptParam::toString)
+                            .collect(java.util.stream.Collectors.joining("; "));
+
+                    // 2. SALVA NO LOG DO CSV (Ocorre sempre, no background)
+                    // Usamos Locale.US para garantir que decimais usem ponto (ex: 0.95) em vez de vírgula
+                    // Salva no log incluindo os Círculos
+                    if(logResults) {
+                        String logLine = String.format(java.util.Locale.US, "%d,%s,%.2f,%.2f,%d,%.4f,%s",
+                                i, result.workerName, timeMs, result.reward, circulosEncontrados, threadIoU, threadParams);
+
+                        explorationHistory.add(logLine);
+                    }
+                    // --- IMPRESSÃO DETALHADA POR THREAD (Se a flag estiver ativa) ---
+                    if (verboseMode) {
+
+                        // Imprime: [Worker-X] Tempo | Reward | mIoU | Params
+                        System.out.printf("   [ %-8s ] Tempo: %5.1f ms | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | Params: %s%n",
+                                result.workerName, timeMs, result.reward, circulosEncontrados, threadIoU, threadParams);
+                    }
+
                     if (bestOfBatch == null || result.reward > bestOfBatch.reward) {
                         bestOfBatch = result;
                     }
                 }
-
+                if (verboseMode) {
+                    System.out.println("   ------------------------------------------");
+                }
                 // Avalia os resultados da Batch
                 if (bestOfBatch != null) {
                     double currentMeanIoU = env.calculateMeanIoU(bestOfBatch.detectedCircles);
@@ -122,6 +167,9 @@ public class ParallelOptimizer {
                     // --- VERIFICAÇÃO DE RECORDE GLOBAL ---
                     if (bestOfBatch.reward > globalBestReward) {
                         globalBestReward = bestOfBatch.reward;
+
+                        globalBestCircles = bestOfBatch.detectedCircles.size(); // <-- Guarda para o final
+                        globalBestIoU = currentMeanIoU;                         // <-- Guarda para o final
 
                         // Atualiza o explorador para a próxima rodada
                         this.currentBestParams = deepCopyParams(bestOfBatch.usedParams);
@@ -167,22 +215,64 @@ public class ParallelOptimizer {
 
         executor.shutdown();
 
+        // --- GERA O ARQUIVO CSV COM TODA A HISTÓRIA DO TREINAMENTO ---
+        if(logResults)
+            exportLogToCSV();
+
         // [PASSO DO ELITISMO]: Retorna a variável do Cofre, nunca o Explorador!
+        // --- NOVO: RESUMO FINAL DA OTIMIZAÇÃO ---
+                String finalParamsStr = absoluteBestParams.stream()
+                .map(OptParam::toString)
+                .collect(java.util.stream.Collectors.joining(", "));
+
+        System.out.println("\n=======================================================");
+        System.out.println("🏆 RESULTADO FINAL DA OTIMIZAÇÃO 🏆");
+        System.out.printf("Reward: %.1f | Círculos: %d | mIoU: %.4f%n",
+                globalBestReward, globalBestCircles, globalBestIoU);
+        System.out.println("Melhores Parâmetros: " + finalParamsStr);
+        System.out.println("=======================================================\n");
         return absoluteBestParams;
     }
 
     /**
      * Aplica uma mutação aleatória forte nos parâmetros atuais para tirá-los do buraco.
      */
+    /**
+     * Aplica uma mutação aleatória forte nos parâmetros atuais para tirá-los do buraco (Local Optima).
+     * Respeita rigorosamente o 'Step' (pulo) do parâmetro para não gerar números inválidos.
+     */
     private void scrambleParameters(List<OptParam> params) {
         for (OptParam p : params) {
-            // 30% de chance de mudar radicalmente cada parâmetro
+            // 30% de chance de aplicar a mutação radical neste parâmetro específico
             if (Math.random() < 0.3) {
+
+                // Calcula quantos "degraus" (steps) existem entre o Mínimo e o Máximo
                 double range = p.getMax() - p.getMin();
-                // Joga o parâmetro para um valor aleatório dentro do limite dele
-                double newValue = p.getMin() + (Math.random() * range);
+                int possibleSteps = (int) (range / p.getStep());
+
+                // Sorteia um número aleatório de degraus
+                int randomSteps = (int) (Math.random() * (possibleSteps + 1));
+
+                // O novo valor será o Mínimo + (degraus sorteados * tamanho do degrau)
+                double newValue = p.getMin() + (randomSteps * p.getStep());
+
                 p.setValue(newValue);
             }
+        }
+    }
+
+    /**
+     * Exporta todo o histórico de exploração das threads para um arquivo CSV.
+     */
+    private void exportLogToCSV() {
+
+        try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.File(logFileName))) {
+            for (String line : explorationHistory) {
+                writer.println(line);
+            }
+            System.out.println("\n📊 [EXPORTAÇÃO] Log completo salvo com sucesso em: " + logFileName);
+        } catch (Exception e) {
+            System.err.println("Erro ao salvar log de exploração: " + e.getMessage());
         }
     }
     
@@ -232,5 +322,30 @@ public class ParallelOptimizer {
         } catch (Exception e) {
             System.err.println("Erro ao aplicar ação paralela: " + action);
         }
+    }
+
+    public boolean isVerboseMode() {
+        return verboseMode;
+    }
+
+    public void setVerboseMode(boolean verboseMode) {
+        this.verboseMode = verboseMode;
+    }
+
+    public String getLogFileName() {
+        return logFileName;
+    }
+
+    public void setLogFileName(String logFileName) {
+        this.logResults = true;
+        this.logFileName = logFileName;
+    }
+
+    public boolean isLogResults() {
+        return logResults;
+    }
+
+    public void setLogResults(boolean logResults) {
+        this.logResults = logResults;
     }
 }

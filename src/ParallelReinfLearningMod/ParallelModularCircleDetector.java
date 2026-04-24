@@ -40,7 +40,7 @@ public class ParallelModularCircleDetector {
          
      // Ordem Sugerida (Pipeline Ideal):
      // 1. Melhorar contraste local (CLAHE)
- //       pipeline.addFilter(new CLAHEFilter());
+        pipeline.addFilter(new CLAHEFilter());
 
      // 2. Reduzir ruído preservando bordas (Bilateral é caro, use com cuidado, ou use Gaussian)
      // Nota: O Agente pode aprender a zerar o Gaussian e usar o Bilateral ou vice-versa
@@ -975,19 +975,19 @@ public class ParallelModularCircleDetector {
 		myConfig.setPositionTolerance(2); // Tolerance for position and radius mismatch
 		myConfig.setIouThreshold(0.95);
 		myConfig.setTargetMeanIoU(0.98);
-		myConfig.setPatienceLimit(50);
+		myConfig.setPatienceLimit(30);
 
         // 4. Injeta a configuração no Ambiente
-        //String imagePath ="src/matrix_output.png";
-		String imagePath ="src/matrix_output_thin.png";
+        //String imagePath ="testImages/matrix_output.png";
+		String imagePath ="testImages/matrix_output_thin.png";
         ModularEnvironment env = new ModularEnvironment(imagePath, groundTruth, pipeline, myConfig);
      // --- 5. CONFIGURAÇÃO DE MULTITHREADING ---
         // Opção A: Automático (Núcleos lógicos - 1 para deixar o OS respirar)
         int logicalCores = Runtime.getRuntime().availableProcessors();
         int threadCount = Math.max(1, logicalCores - 1);
-        
+		//int threadCount = 2;
         // Opção B: Manual (Ex: vindo de um JSpinner da interface)
-        // int threadCount = 4;
+        // int threadCount = 10;
 
         System.out.println("Hardware detectado: " + logicalCores + " núcleos.");
         System.out.println("Iniciando Otimizador com " + threadCount + " threads em paralelo.");
@@ -995,15 +995,27 @@ public class ParallelModularCircleDetector {
         // --- 6. INSTANCIAÇÃO E EXECUÇÃO DO OTIMIZADOR ---
         // Passamos os parâmetros iniciais do pipeline para começar a exploração
         List<OptParam> initialParams = pipeline.getAllParameters();
-        
+// measure time
+		long startTime = System.nanoTime();
+
         ParallelOptimizer optimizer = new ParallelOptimizer(threadCount, env, initialParams);
+		// ATIVA O MODO DE EXPLORAÇÃO DETALHADO!
+		optimizer.setVerboseMode(true);
+		optimizer.setLogResults(true);
+		optimizer.setLogFileName("27threads.csv");
         
         // Executa a otimização (Bloqueante - vai demorar alguns segundos/minutos)
         // Retorna a lista dos melhores parâmetros encontrados
-        List<OptParam> bestParams = optimizer.runOptimization(100); // 500 Episódios (Batches)
+        List<OptParam> bestParams = optimizer.runOptimization(500); // 500 Episódios (Batches)
 
         System.out.println("=== Otimização Finalizada ===");
         System.out.println("Melhores Parâmetros: " + bestParams);
+		long endTime = System.nanoTime();
+		long durationNanos = endTime - startTime;
+		System.out.println("Execution time: " + durationNanos + " nano seconds");
+		System.out.println("Execution time: " + durationNanos/1.0E9 + " seconds");
+
+
 
         // --- 7. VISUALIZAÇÃO DOS RESULTADOS ---
         // Precisamos aplicar os parâmetros vencedores de volta ao Pipeline principal

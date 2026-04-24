@@ -241,7 +241,7 @@ public class ModularEnvironment {
 
         return reward;
     }
-    // Adicione este novo método na classe ModularEnvironment
+
     public double calculateMeanIoU(List<Circle> detected) {
         if (groundTruth.isEmpty()) return 0.0;
 
