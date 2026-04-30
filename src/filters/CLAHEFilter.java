@@ -8,9 +8,9 @@ import org.opencv.imgproc.Imgproc;
 
 public class CLAHEFilter implements ImageFilter {
     // ClipLimit: Limite para evitar amplificação de ruído (geralmente entre 1.0 e 4.0)
-    private OptParam clipLimit = new OptParam("CLAHE_Clip", 2.0, 0.5, 6.0, 0.5, false);
+    private OptParam clipLimit = new OptParam("CLAHE_Clip", 2.0, 0.5, 6.0, 0.1, false);
     // GridSize: Tamanho da área local (ex: 8x8). Valores maiores = mais global.
-    private OptParam gridSize = new OptParam("CLAHE_Grid", 8, 2, 32, 2, true);
+    private OptParam gridSize = new OptParam("CLAHE_Grid", 8, 2, 60, 2, true);
 
     @Override
     public Mat process(Mat input) {

@@ -16,11 +16,11 @@ class ProcessingPipeline {
     
     // Parâmetros "Core" do Hough (que não são filtros, mas são decisão)
     private OptParam houghDp = new OptParam("H_dp", 2.0, 0.5, 3.0, 0.1, false);
-    private OptParam houghMinDist = new OptParam("H_minDist", 10, 40, 110, 10, false);
-    private OptParam houghP1 = new OptParam("H_p1", 10, 10, 140, 20, false);
+    private OptParam houghMinDist = new OptParam("H_minDist", 10, 40, 110, 5, true);
+    private OptParam houghP1 = new OptParam("H_p1", 10, 10, 140, 10, false);
     private OptParam houghP2 = new OptParam("H_p2", 0.9, 0.1, 0.9, 0.1, false);
-    private OptParam houghMinR = new OptParam("H_minR", 5, 5, 30, 2, true);
-    private OptParam houghMaxR = new OptParam("H_maxR", 60, 30, 160, 5, true);
+    private OptParam houghMinR = new OptParam("H_minR", 5, 5, 30, 1, true);
+    private OptParam houghMaxR = new OptParam("H_maxR", 60, 30, 160, 2, true);
 
     /*
     //old values

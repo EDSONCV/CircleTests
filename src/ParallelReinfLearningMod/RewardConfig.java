@@ -5,7 +5,15 @@ package ParallelReinfLearningMod;
  * Elimina números mágicos e centraliza a política de aprendizado.
  */
 public class RewardConfig {
-    
+
+    // Pesos: A soma dos dois idealmente deve ser 1.0 (ex: 0.7 e 0.3)
+    private double weightIoU = 0.7;     // 70% da nota vem da sobreposição
+    private double weightCenter = 0.3;  // 30% da nota vem de acertar o centro exato
+
+    // Raio de "Atração Gravitacional" (em pixels).
+    // Círculos além dessa distância recebem nota 0.0 no quesito centro.
+    private double maxCenterDistance = 100.0;
+
     // --- Parâmetros de Sanidade (Early Exit) ---
     private int sanityLimitAbsolute = 50;      // Limite máximo absoluto de círculos
     private int sanityLimitMultiplier = 4;     // Limite relativo (x vezes o número real)
@@ -24,11 +32,6 @@ public class RewardConfig {
     private double excessPenaltyExponent = 1.8; // Potência da punição (ex: excesso ^ 1.8)
     private double excessPenaltyWeight = 1.5;   // Peso multiplicador da punição exponencial
 
-    // Tolerância Geométrica
-    private double positionTolerance = 15.0;    // Distância máxima em pixels para considerar "Match"
-
- // Tolerância em pixels para considerar o centro perfeito
-    private double stopToleranceCenter = 1.0;
 
     // Tolerância em pixels para considerar o raio perfeito
     private double stopToleranceRadius = 1.0;
@@ -78,11 +81,6 @@ public class RewardConfig {
     public double getExcessPenaltyWeight() { return excessPenaltyWeight; }
     public void setExcessPenaltyWeight(double excessPenaltyWeight) { this.excessPenaltyWeight = excessPenaltyWeight; }
 
-    public double getPositionTolerance() { return positionTolerance; }
-    public void setPositionTolerance(double positionTolerance) { this.positionTolerance = positionTolerance; }
-    public double getStopToleranceCenter() { return stopToleranceCenter; }
-    public void setStopToleranceCenter(double stopToleranceCenter) { this.stopToleranceCenter = stopToleranceCenter; }
-
 
     public double getIouThreshold() { return iouThreshold; }
     public void setIouThreshold(double iouThreshold) { this.iouThreshold = iouThreshold; }
@@ -100,4 +98,12 @@ public class RewardConfig {
 
     public int getPatienceLimit() { return patienceLimit; }
     public void setPatienceLimit(int patienceLimit) { this.patienceLimit = patienceLimit; }
+    public double getWeightIoU() { return weightIoU; }
+    public void setWeightIoU(double weightIoU) { this.weightIoU = weightIoU; }
+
+    public double getWeightCenter() { return weightCenter; }
+    public void setWeightCenter(double weightCenter) { this.weightCenter = weightCenter; }
+
+    public double getMaxCenterDistance() { return maxCenterDistance; }
+    public void setMaxCenterDistance(double maxCenterDistance) { this.maxCenterDistance = maxCenterDistance; }
 }

@@ -18,6 +18,8 @@ public class ParallelOptimizer {
     private boolean logResults = false;
     private String logFileName = "Historico_Exploracao_RL.csv";
     private List<String> explorationHistory; // <--- NOVA VARIÁVEL
+    //  (Lista Tabu) ---
+    private java.util.Set<String> visitedStates = java.util.concurrent.ConcurrentHashMap.newKeySet();
     
     // Estado atual (Melhores parâmetros conhecidos)
     private List<OptParam> currentBestParams;
@@ -34,7 +36,7 @@ public class ParallelOptimizer {
         this.agent = new DynamicRLAgent(currentBestParams);
         this.explorationHistory = new ArrayList<>();
         // Define o cabeçalho do arquivo CSV
-        this.explorationHistory.add("Batch,Thread,Tempo_ms,Reward,Círculos encontrados,mIoU,Parametros");
+        this.explorationHistory.add("Batch,Thread,Tempo_ms,Reward,Circulos,mIoU,mDist_px,mHibrida,Parametros");
     }
 
     public List<OptParam> runOptimization(int totalEpisodes) {
@@ -46,6 +48,8 @@ public class ParallelOptimizer {
         int episodesWithoutImprovement = 0;
         int globalBestCircles = 0;
         double globalBestIoU = 0.0;
+        double globalBestDist = 0.0;
+        double globalBestHybrid = 0.0;
 
         // [PASSO DO ELITISMO]: Criação do "Cofre"
         // Inicializa o cofre com os parâmetros padrão para não começar vazio
@@ -54,45 +58,57 @@ public class ParallelOptimizer {
         for (int i = 0; i < totalEpisodes; i++) {
             List<Callable<SimulationResult>> tasks = new ArrayList<>();
 
-            // Prepara as tarefas para as threads
-            /*for (int k = 0; k < batchSize; k++) {
-                List<OptParam> candidateParams = deepCopyParams(this.currentBestParams);
-                String action = agent.chooseActionForSim(k);
-                applyActionToParams(candidateParams, action);
-                tasks.add(new SimulationTask(env, candidateParams, "Worker-" + (k % threadCount)));
-            }*/
             // Dentro do for loop que cria as tasks no ParallelOptimizer:
             for (int k = 0; k < batchSize; k++) {
-                List<OptParam> candidateParams = deepCopyParams(this.currentBestParams);
-                String action = agent.chooseActionForSim(k);
+                List<OptParam> candidateParams = null;
+                boolean isNovel = false;
+                int attempts = 0;
 
-                // Aplica a ação do Agente
-                applyActionToParams(candidateParams, action);
+                // Tenta encontrar uma configuração INÉDITA (até 50 tentativas)
+                while (!isNovel && attempts < 50) {
+                    candidateParams = deepCopyParams(this.currentBestParams);
 
-                // --- NOVO CÓDIGO: VERIFICA SE BATEU NO LIMITE (Ficou igual) ---
-                boolean isIdentical = true;
-                for (int p = 0; p < candidateParams.size(); p++) {
-                    if (candidateParams.get(p).getValue() != this.currentBestParams.get(p).getValue()) {
-                        isIdentical = false;
-                        break;
-                    }
-                }
-
-                // Se a ação não fez nada (bateu no limite), forçamos uma mutação aleatória num parâmetro
-                if (isIdentical) {
-                    int randomParamIndex = (int) (Math.random() * candidateParams.size());
-                    OptParam paramToMutate = candidateParams.get(randomParamIndex);
-
-                    // Muta para cima ou para baixo aleatoriamente
-                    if (Math.random() > 0.5) {
-                        paramToMutate.increase();
+                    if (attempts == 0) {
+                        // Na 1ª tentativa, deixa o Agente RL escolher o vizinho imediato
+                        String action = agent.chooseActionForSim(k);
+                        applyActionToParams(candidateParams, action);
                     } else {
-                        paramToMutate.decrease();
+                        // Se já deu repetido, força MUTAÇÕES MÚLTIPLAS para fugir do congestionamento!
+                        // Quanto mais falha, mais parâmetros ele altera ao mesmo tempo (Tabu Search)
+                        int numMutations = (attempts / 5) + 1;
+                        for (int m = 0; m < numMutations; m++) {
+                            int randomParamIndex = (int) (Math.random() * candidateParams.size());
+                            OptParam paramToMutate = candidateParams.get(randomParamIndex);
+                            if (Math.random() > 0.5) paramToMutate.increase();
+                            else paramToMutate.decrease();
+                        }
                     }
-                }
-                // -------------------------------------------------------------
 
-                tasks.add(new SimulationTask(env, candidateParams, "Worker-" + (k % threadCount)));
+                    // Gera a "Assinatura" desta configuração
+                    String paramsKey = candidateParams.stream()
+                            .map(OptParam::toString)
+                            .collect(Collectors.joining("; "));
+
+                    // Se esta assinatura NUNCA foi vista em toda a história do treino:
+                    if (!visitedStates.contains(paramsKey)) {
+                        isNovel = true;
+                        visitedStates.add(paramsKey); // Anota no caderno para ninguém mais repetir
+                    }
+
+                    attempts++;
+                }
+
+                // --- CORREÇÃO DA CONDIÇÃO DE CORRIDA (THREAD-SAFE) ---
+                // Instanciamos um ambiente 'clone' limpo e exclusivo para este Worker.
+                ModularEnvironment localEnv = new ModularEnvironment(
+                        this.env.getOriginalImage(),
+                        this.env.getGroundTruth(),
+                        this.env.getPipelineFactory(), // <--- USE A FÁBRICA AQUI
+                        this.env.getRewardConfig()
+                );
+
+                // Passamos o 'localEnv' em vez do 'env' global
+                tasks.add(new SimulationTask(localEnv, candidateParams, "Worker-" + (k % threadCount)));
             }
 
             try {
@@ -112,6 +128,12 @@ public class ParallelOptimizer {
                     double threadIoU = env.calculateMeanIoU(result.detectedCircles);
                     int circulosEncontrados = result.detectedCircles.size(); // <-- Captura os círculos
 
+                    // --- NOVOS CÁLCULOS DE MÉTRICAS ---
+
+                    double[] hybridMetrics = env.calculateHybridMetricsForLog(result.detectedCircles);
+                    double meanDist = hybridMetrics[0];
+                    double meanHybrid = hybridMetrics[1];
+
                     // Usamos ponto e vírgula (;) para separar os parâmetros,
                     // garantindo que não quebre as colunas do arquivo CSV!
                     String threadParams = result.usedParams.stream()
@@ -122,8 +144,9 @@ public class ParallelOptimizer {
                     // Usamos Locale.US para garantir que decimais usem ponto (ex: 0.95) em vez de vírgula
                     // Salva no log incluindo os Círculos
                     if(logResults) {
-                        String logLine = String.format(java.util.Locale.US, "%d,%s,%.2f,%.2f,%d,%.4f,%s",
-                                i, result.workerName, timeMs, result.reward, circulosEncontrados, threadIoU, threadParams);
+                        String logLine = String.format(java.util.Locale.US, "%d,%s,%.2f,%.2f,%d,%.4f,%.2f,%.4f,%s",
+                                i, result.workerName, timeMs, result.reward, circulosEncontrados, threadIoU, meanDist, meanHybrid, threadParams);
+                        explorationHistory.add(logLine);
 
                         explorationHistory.add(logLine);
                     }
@@ -131,8 +154,8 @@ public class ParallelOptimizer {
                     if (verboseMode) {
 
                         // Imprime: [Worker-X] Tempo | Reward | mIoU | Params
-                        System.out.printf("   [ %-8s ] Tempo: %5.1f ms | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | Params: %s%n",
-                                result.workerName, timeMs, result.reward, circulosEncontrados, threadIoU, threadParams);
+                        System.out.printf("   [ %-8s ] Tempo: %5.1f ms | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | mDist: %5.1f px | mHíbrida: %.4f | Params: %s%n",
+                                result.workerName, timeMs, result.reward, circulosEncontrados, threadIoU, meanDist, meanHybrid, threadParams);
                     }
 
                     if (bestOfBatch == null || result.reward > bestOfBatch.reward) {
@@ -145,6 +168,9 @@ public class ParallelOptimizer {
                 // Avalia os resultados da Batch
                 if (bestOfBatch != null) {
                     double currentMeanIoU = env.calculateMeanIoU(bestOfBatch.detectedCircles);
+                    double[] bestMetrics = env.calculateHybridMetricsForLog(bestOfBatch.detectedCircles);
+                    double currentMeanDist = bestMetrics[0];
+                    double currentMeanHybrid = bestMetrics[1];
 
                     //System.out.printf("Batch %3d | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | Thread: %s%n",
                     //        i, bestOfBatch.reward, bestOfBatch.detectedCircles.size(), currentMeanIoU, bestOfBatch.workerName);
@@ -154,34 +180,26 @@ public class ParallelOptimizer {
                             .map(OptParam::toString)
                             .collect(java.util.stream.Collectors.joining(", "));
 
-                    // --- 2. IMPRIME O BATCH COM O mIoU ---
-                    System.out.printf("Batch %3d | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | Thread: %s%n",
-                            i, bestOfBatch.reward, bestOfBatch.detectedCircles.size(), currentMeanIoU, bestOfBatch.workerName);
+                    // --- IMPRESSÃO DO VENCEDOR DO BATCH (ATUALIZADA) ---
+                    System.out.printf("Batch %3d | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | mDist: %5.1f px | mHíbrida: %.4f | Thread: %s%n",
+                            i, bestOfBatch.reward, bestOfBatch.detectedCircles.size(), currentMeanIoU, currentMeanDist, currentMeanHybrid, bestOfBatch.workerName);
 
-                    // --- 3. IMPRIME OS PARÂMETROS LOGO ABAIXO ---
                     System.out.println("   >> Params: " + formattedParams);
-
-
-
 
                     // --- VERIFICAÇÃO DE RECORDE GLOBAL ---
                     if (bestOfBatch.reward > globalBestReward) {
                         globalBestReward = bestOfBatch.reward;
+                        globalBestCircles = bestOfBatch.detectedCircles.size();
+                        globalBestIoU = currentMeanIoU;
+                        globalBestDist = currentMeanDist;     // <-- SALVA O RECORDE DE DISTÂNCIA
+                        globalBestHybrid = currentMeanHybrid; // <-- SALVA O RECORDE HÍBRIDO
 
-                        globalBestCircles = bestOfBatch.detectedCircles.size(); // <-- Guarda para o final
-                        globalBestIoU = currentMeanIoU;                         // <-- Guarda para o final
-
-                        // Atualiza o explorador para a próxima rodada
                         this.currentBestParams = deepCopyParams(bestOfBatch.usedParams);
-
-                        // [PASSO DO ELITISMO]: Salva no Cofre de Ouro!
                         absoluteBestParams = deepCopyParams(bestOfBatch.usedParams);
-
-                        episodesWithoutImprovement = 0; // Zera a estagnação
+                        episodesWithoutImprovement = 0;
                     } else {
                         episodesWithoutImprovement++;
                     }
-
                     // --- [PASSO DO SALTO EXPLORATÓRIO] ---
                     int patienceLimit = env.getRewardConfig().getPatienceLimit();
 
@@ -220,17 +238,20 @@ public class ParallelOptimizer {
             exportLogToCSV();
 
         // [PASSO DO ELITISMO]: Retorna a variável do Cofre, nunca o Explorador!
-        // --- NOVO: RESUMO FINAL DA OTIMIZAÇÃO ---
-                String finalParamsStr = absoluteBestParams.stream()
+
+// --- RESUMO FINAL DA OTIMIZAÇÃO (ATUALIZADO) ---
+        String finalParamsStr = absoluteBestParams.stream()
                 .map(OptParam::toString)
                 .collect(java.util.stream.Collectors.joining(", "));
 
-        System.out.println("\n=======================================================");
+        System.out.println("\n=======================================================================");
         System.out.println("🏆 RESULTADO FINAL DA OTIMIZAÇÃO 🏆");
-        System.out.printf("Reward: %.1f | Círculos: %d | mIoU: %.4f%n",
-                globalBestReward, globalBestCircles, globalBestIoU);
+        System.out.printf("Reward: %.1f | Círculos: %d | mIoU: %.4f | mDist: %.1f px | mHíbrida: %.4f%n",
+                globalBestReward, globalBestCircles, globalBestIoU, globalBestDist, globalBestHybrid);
         System.out.println("Melhores Parâmetros: " + finalParamsStr);
-        System.out.println("=======================================================\n");
+        System.out.println("=======================================================================\n");
+
+
         return absoluteBestParams;
     }
 

@@ -8,7 +8,7 @@ import org.opencv.imgproc.Imgproc;
 
 public class AdaptiveThreshFilter implements ImageFilter {
     // Tamanho do bloco de vizinhança (deve ser ímpar)
-    private OptParam blockSize = new OptParam("Thresh_Block", 11, 3, 51, 2, true);
+    private OptParam blockSize = new OptParam("Thresh_Block", 21, 3, 51, 2, true);
     // Constante subtraída da média (ajuste fino de ruído)
     private OptParam cParam = new OptParam("Thresh_C", 2, -10, 10, 1, true);
 
@@ -16,10 +16,15 @@ public class AdaptiveThreshFilter implements ImageFilter {
     public Mat process(Mat input) {
         Mat output = new Mat();
         // ADAPTIVE_THRESH_GAUSSIAN_C geralmente é mais natural que o MEAN_C
-        Imgproc.adaptiveThreshold(input, output, 255, 
-                Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                Imgproc.THRESH_BINARY, 
-                (int)blockSize.getValue(), 
+ /*       Imgproc.adaptiveThreshold(input, output, 255,
+                Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,
+                Imgproc.THRESH_BINARY,
+                (int)blockSize.getValue(),
+                cParam.getValue());*/
+        Imgproc.adaptiveThreshold(input, output, 255,
+                Imgproc.ADAPTIVE_THRESH_MEAN_C,
+                Imgproc.THRESH_BINARY_INV,
+                (int)blockSize.getValue(),
                 cParam.getValue());
         return output;
     }

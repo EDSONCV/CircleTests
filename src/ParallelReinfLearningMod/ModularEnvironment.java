@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public class ModularEnvironment {
     private String imagePath;
@@ -16,18 +17,23 @@ public class ModularEnvironment {
     private ProcessingPipeline pipelinePrototype; // Protótipo (usado apenas para clonagem)
     private Mat originalImage;
     private RewardConfig rewardConfig;
+    private Supplier<ProcessingPipeline> pipelineFactory;
+    private ProcessingPipeline localPipeline;
+
+
 
     /**
      * Construtor
      */
-    public ModularEnvironment(String path, List<Circle> gt, ProcessingPipeline pipe, RewardConfig rConfig) {
+    public ModularEnvironment(String path, List<Circle> gt, Supplier<ProcessingPipeline> pipeFactory, RewardConfig rConfig) {
         this.imagePath = path;
         this.groundTruth = gt;
-        this.pipelinePrototype = pipe;
-        
-        // Se config for nula, usa padrão
-        this.rewardConfig = (rConfig != null) ? rConfig : new RewardConfig();
 
+        this.pipelineFactory = pipeFactory;
+        // FABRICA UM PIPELINE EXCLUSIVO PARA ESTA INSTÂNCIA!
+        this.localPipeline = pipeFactory.get();
+
+        this.rewardConfig = (rConfig != null) ? rConfig : new RewardConfig();
         this.originalImage = Imgcodecs.imread(path);
         if (this.originalImage.empty()) {
             System.err.println("Erro crítico: Imagem não encontrada em " + path);
@@ -35,29 +41,40 @@ public class ModularEnvironment {
         }
     }
 
-    // --- MÉTODOS DE DETECÇÃO ---
-
     /**
-     * Versão Padrão (Single Thread): Usa os parâmetros atuais do pipeline interno.
+     * NOVO CONSTRUTOR (Para Multithread):
+     * Recebe a imagem já carregada na memória (Mat) para evitar leitura do disco a cada thread.
      */
-    public List<Circle> runDetection() {
-        // Pega os parâmetros que estão configurados no pipeline neste momento
-        return runDetectionInternal(this.pipelinePrototype);
+    public ModularEnvironment(Mat loadedImage, List<Circle> gt, Supplier<ProcessingPipeline> pipeFactory, RewardConfig rConfig) {
+        this.imagePath = "in-memory";
+        this.groundTruth = gt;
+        this.pipelineFactory = pipeFactory;
+
+        // FABRICA UM PIPELINE EXCLUSIVO PARA A THREAD
+        this.localPipeline = pipeFactory.get();
+
+        this.rewardConfig = (rConfig != null) ? rConfig : new RewardConfig();
+        this.originalImage = loadedImage;
     }
 
+
+
+    // --- MÉTODOS DE DETECÇÃO ---
+
+
     /**
-     * Versão Multithread (Safe): Recebe uma lista de parâmetros candidatos,
-     * cria um pipeline temporário, aplica os valores e executa.
-     * * @param paramsForThisRun A lista de parâmetros (variáveis de decisão) para este teste específico.
+     * Versão Multithread (Safe):
+     * Como a Factory já instanciou um 'localPipeline' exclusivo para esta Thread,
+     * não precisamos de clonar. Basta sincronizar os parâmetros locais e executar.
+     * @param paramsForThisRun A lista de parâmetros (variáveis de decisão) para este teste específico.
      */
     public List<Circle> runDetection(List<OptParam> paramsForThisRun) {
-        // 1. CLONAGEM CRÍTICA:
-        // Precisamos de uma cópia isolada do pipeline para não afetar outras threads.
-        // O método 'cloneWithParams' deve ser implementado no ProcessingPipeline (veja abaixo).
-        ProcessingPipeline localPipeline = this.pipelinePrototype.cloneWithParams(paramsForThisRun);
 
-        // 2. Executa usando essa cópia local
-        return runDetectionInternal(localPipeline);
+        // 1. Sincroniza os novos parâmetros diretamente no pipeline exclusivo desta Thread
+        this.localPipeline.syncParameters(paramsForThisRun);
+
+        // 2. Executa o algoritmo OpenCV
+        return runDetectionInternal(this.localPipeline);
     }
 
     /**
@@ -99,87 +116,6 @@ public class ModularEnvironment {
     // --- CÁLCULO DE RECOMPENSA (Mantido igual à versão anterior) ---
     // uses boolean metrics to say if a circle is good or not
 
-    public double calculateRewardOld(List<Circle> detected) {
-        int detectedCount = detected.size();
-        int truthCount = groundTruth.size();
-        
-        // 1. Sanity Check / Early Exit
-        int dynamicLimit = Math.max(
-            rewardConfig.getSanityLimitAbsolute(), 
-            truthCount * rewardConfig.getSanityLimitMultiplier()
-        );
-
-        if (detectedCount > dynamicLimit) {
-            return rewardConfig.getSanityFailPenalty() - (detectedCount * rewardConfig.getSanityExcessWeight());
-        }
-
-        double reward = 0;
-        int matchedCount = 0;
-        Set<Circle> matchedGroundTruth = new HashSet<>();
-
-
-/*
-        for (Circle det : detected) {
-            boolean foundMatch = false;
-            for (Circle truth : groundTruth) {
-                if (det.matches(truth, rewardConfig.getPositionTolerance())) {
-                    if (!matchedGroundTruth.contains(truth)) {
-                        reward += rewardConfig.getMatchBonus();
-                        matchedGroundTruth.add(truth);
-                        matchedCount++;
-                        foundMatch = true;
-                        break;
-                    } else {
-                        reward += rewardConfig.getDuplicatePenalty();
-                    }
-                }
-            }
-            if (!foundMatch) {
-                reward += rewardConfig.getNoisePenalty();
-            }
-        }
-*/
-        for (Circle det : detected) {
-            Circle bestMatch = null;
-            double bestIou = 0.0;
-
-            // Procura no Ground Truth o círculo que tem a MAIOR sobreposição com o detectado
-            for (Circle truth : groundTruth) {
-                double currentIou = det.getIoU(truth);
-                if (currentIou > bestIou) {
-                    bestIou = currentIou;
-                    bestMatch = truth;
-                }
-            }
-
-            // Se o melhor IoU superar o nosso rigor (ex: > 0.50)
-            if (bestIou >= rewardConfig.getIouThreshold()) {
-                if (!matchedGroundTruth.contains(bestMatch)) {
-                    // Recompensa Proporcional: Se acertar cravado (IoU=1.0), ganha o bônus máximo!
-                    reward += (rewardConfig.getMatchBonus() * bestIou);
-                    matchedGroundTruth.add(bestMatch);
-                    matchedCount++;
-                } else {
-                    reward += rewardConfig.getDuplicatePenalty();
-                }
-            } else {
-                // Se o melhor IoU for menor que 0.50, é ruído (falso positivo)
-                reward += rewardConfig.getNoisePenalty();
-            }
-        }
-        int missed = truthCount - matchedCount;
-        reward -= (missed * rewardConfig.getMissPenalty());
-
-        int excess = Math.max(0, detectedCount - truthCount);
-        if (excess > 0) {
-            double exponentialPenalty = Math.pow(excess, rewardConfig.getExcessPenaltyExponent()) 
-                                      * rewardConfig.getExcessPenaltyWeight();
-            reward -= exponentialPenalty;
-        }
-
-        return reward;
-    }
-
     //uses quantitative metrics to say that a detection/circle is good
 
     public double calculateReward(List<Circle> detected) {
@@ -196,38 +132,59 @@ public class ModularEnvironment {
         double sumIoU = 0.0; // O SEU INDICADOR QUANTITATIVO GLOBAL
         Set<Circle> matchedGroundTruth = new HashSet<>();
 
-        // 2. Mapeamento Contínuo
+          // new version with IoT and center as reward
+
+        // 2. Mapeamento Contínuo (Híbrido)
         for (Circle det : detected) {
             Circle bestMatch = null;
-            double bestIou = 0.0;
+            double bestHybridScore = 0.0;
+            double bestIouForLog = 0.0; // Guardamos o IoU real apenas para a estatística mIoU
 
             for (Circle truth : groundTruth) {
-                double currentIou = det.getIoU(truth); // Já retorna entre 0.0 e 1.0
-                if (currentIou > bestIou) {
-                    bestIou = currentIou;
+                // 1. Calcula o IoU (0.0 a 1.0)
+                double iou = det.getIoU(truth);
+
+                // 2. Calcula a Distância Euclidiana linear
+                double dist = Math.sqrt(Math.pow(det.x - truth.x, 2) + Math.pow(det.y - truth.y, 2));
+
+                // 3. Converte a Distância numa nota (0.0 a 1.0).
+                // 1.0 = Centro exato | 0.0 = Muito longe
+                double distScore = 0.0;
+                if (dist < rewardConfig.getMaxCenterDistance()) {
+                    distScore = 1.0 - (dist / rewardConfig.getMaxCenterDistance());
+                }
+
+                // 4. A MÁGICA: Nota Híbrida Ponderada
+                double hybridScore = (iou * rewardConfig.getWeightIoU()) +
+                        (distScore * rewardConfig.getWeightCenter());
+
+                if (hybridScore > bestHybridScore) {
+                    bestHybridScore = hybridScore;
                     bestMatch = truth;
+                    bestIouForLog = iou;
                 }
             }
 
-            // Se houve qualquer toque (IoU > 0)
-            if (bestIou > 0.0) {
+            // Se houve pontuação Híbrida (ou tocou, ou está no raio de atração)
+            if (bestHybridScore > 0.0) {
                 if (!matchedGroundTruth.contains(bestMatch)) {
-                    // AQUI ESTÁ A MÁGICA DA RECOMPENSA DENSA:
-                    // Se o MatchBonus é 50 e o IoU é 0.2, ele ganha 10 pontos.
-                    // Na próxima rodada, se o IoU subir para 0.8, ele ganha 40 pontos.
-                    // O gradiente empurra a IA para o IoU máximo (1.0).
-                    reward += (rewardConfig.getMatchBonus() * bestIou);
-                    sumIoU += bestIou;
+
+                    // A recompensa da IA agora é guiada pela nota híbrida!
+                    reward += (rewardConfig.getMatchBonus() * bestHybridScore);
+
+                    // Mas a métrica oficial de tela continua sendo apenas a geometria (IoU)
+                    sumIoU += bestIouForLog;
+
                     matchedGroundTruth.add(bestMatch);
                 } else {
-                    // Penalidade para não deixar que 5 círculos detectados no mesmo lugar somem pontos
                     reward += rewardConfig.getDuplicatePenalty();
                 }
             } else {
-                // Círculo detectado no meio do nada (Ruído)
+                // Se está longe demais e não toca: Ruído absoluto
                 reward += rewardConfig.getNoisePenalty();
             }
         }
+
 
         // 3. Punição por Omissão (Penaliza os que nem foram tocados)
         int missed = truthCount - matchedGroundTruth.size();
@@ -280,49 +237,71 @@ public class ModularEnvironment {
         return calculateMeanIoU(detected) >= rewardConfig.getTargetMeanIoU();
     }
 
-
-
-
-    // to be used with calculateRewardOld
-
-    public boolean isGoalReachedOld(List<Circle> detected) {
-        // Se a quantidade de círculos detectados for diferente da real, já falhou
-        if (detected.size() != groundTruth.size()) {
-            return false;
+    /**
+     * Calcula a Distância Média e a Nota Híbrida Média para fins de Log e Análise.
+     * Retorna um array onde: [0] = Distância Euclidiana Média, [1] = Nota Híbrida Média
+     */
+    public double[] calculateHybridMetricsForLog(List<Circle> detected) {
+        if (groundTruth.isEmpty() || detected.isEmpty()) {
+            return new double[]{0.0, 0.0};
         }
 
-        int perfectMatches = 0;
-        Set<Circle> matchedGroundTruth = new HashSet<>();
+        double sumDist = 0.0;
+        double sumHybrid = 0.0;
+        int validMatches = 0;
 
         for (Circle det : detected) {
+            double bestHybridScore = 0.0;
+            double distAtBestHybrid = 0.0;
+
             for (Circle truth : groundTruth) {
-                // Usa o método Strict que acabamos de criar, pegando as tolerâncias do Config
-                if (det.getIoU(truth) >= rewardConfig.getIouThreshold()) {
-                    if (!matchedGroundTruth.contains(truth)) {
-                        matchedGroundTruth.add(truth);
-                        perfectMatches++;
-                        break;
-                    }
+                double iou = det.getIoU(truth);
+                double dist = Math.sqrt(Math.pow(det.x - truth.x, 2) + Math.pow(det.y - truth.y, 2));
+
+                double distScore = 0.0;
+                if (dist < rewardConfig.getMaxCenterDistance()) {
+                    distScore = 1.0 - (dist / rewardConfig.getMaxCenterDistance());
                 }
-                /* if (det.matchesStrict(truth, rewardConfig.getStopToleranceCenter(), rewardConfig.getStopToleranceRadius())) {
-                    if (!matchedGroundTruth.contains(truth)) {
-                        matchedGroundTruth.add(truth);
-                        perfectMatches++;
-                        break;
-                    }
-                }*/
+
+                double hybridScore = (iou * rewardConfig.getWeightIoU()) + (distScore * rewardConfig.getWeightCenter());
+
+                // Guardamos a distância atrelada à melhor nota híbrida
+                if (hybridScore > bestHybridScore) {
+                    bestHybridScore = hybridScore;
+                    distAtBestHybrid = dist;
+                }
+            }
+
+            // Só contabilizamos se entrou no radar (nota > 0)
+            if (bestHybridScore > 0.0) {
+                sumHybrid += bestHybridScore;
+                sumDist += distAtBestHybrid;
+                validMatches++;
             }
         }
 
-        // O objetivo é alcançado se 100% dos círculos baterem estritamente
-        return perfectMatches == groundTruth.size();
+        if (validMatches == 0) return new double[]{0.0, 0.0};
+
+        // Retorna as médias
+        return new double[]{ (sumDist / validMatches), (sumHybrid / validMatches) };
     }
 
     // Getters para visualização
     public Mat getOriginalImage() { return originalImage; }
-    public ProcessingPipeline getPipelinePrototype() { return pipelinePrototype; }
+   // public ProcessingPipeline getPipelinePrototype() { return pipelinePrototype; }
 
 	public RewardConfig getRewardConfig() {
 		return rewardConfig;
 	}
+
+    public java.util.List<Circle> getGroundTruth() {
+        return this.groundTruth;   // Substitua pelo nome exato da sua lista de gabaritos
+    }
+
+    public ProcessingPipeline getPipelinePrototype() { return this.localPipeline; } // Retorna o local
+    public Supplier<ProcessingPipeline> getPipelineFactory() { return this.pipelineFactory; } // Repassa a fábrica
+
+
+
+
 }

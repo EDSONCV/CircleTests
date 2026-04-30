@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 /**
  * Circle Structure
  */
-class Circle {
+public class Circle {
     public double x, y, r;
 
     public Circle(double x, double y, double r) {

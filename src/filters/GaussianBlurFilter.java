@@ -13,8 +13,8 @@ public class GaussianBlurFilter implements ImageFilter {
     private OptParam kernel = new OptParam("G_Kernel", 5, 1, 9, 2, true);
     private OptParam sigma = new OptParam("G_Sigma", 2.0, 0.5, 3, 0.5, false);
 */
-    private OptParam kernel = new OptParam("G_Kernel", 11, 3, 9, 2, true);
-    private OptParam sigma = new OptParam("G_Sigma", 7, 0.5, 3, 0.5, false);
+    private OptParam kernel = new OptParam("G_Kernel", 11, 1, 15, 2, true);
+    private OptParam sigma = new OptParam("G_Sigma", 4, 0.5, 4, 0.5, false);
 
     @Override
     public Mat process(Mat input) {
