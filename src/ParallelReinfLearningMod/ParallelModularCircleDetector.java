@@ -37,12 +37,14 @@ public class ParallelModularCircleDetector {
 			ProcessingPipeline p = new ProcessingPipeline();
 //			p.addFilter(new BrightnessContrastFilter());
 //			p.addFilter(new GaussianBlurFilter());
-			p.addFilter(new GaussianBlurFilter());
+
 			p.addFilter(new CLAHEFilter());
 //			p.addFilter(new BilateralFilter());
 			p.addFilter(new AdaptiveThreshFilter());
-
 //			p.addFilter(new MorphClosingFilter());
+			p.addFilter(new GaussianBlurFilter());
+
+
 			// Adicione os outros filtros que estava usando aqui
 			return p;
 		};
@@ -64,8 +66,8 @@ public class ParallelModularCircleDetector {
 		myConfig.setTargetMeanIoU(0.98);
 		myConfig.setPatienceLimit(50);
 		// Para imagens onde a posição do centro é mais difícil de achar que o raio:
-		myConfig.setWeightIoU(0.1);
-		myConfig.setWeightCenter(0.9);
+		myConfig.setWeightIoU(0.9);
+		myConfig.setWeightCenter(0.1);
 		myConfig.setMaxCenterDistance(5);
 
         // 4. Injeta a configuração no Ambiente
@@ -77,8 +79,8 @@ public class ParallelModularCircleDetector {
      // --- 5. CONFIGURAÇÃO DE MULTITHREADING ---
         // Opção A: Automático (Núcleos lógicos - 1 para deixar o OS respirar)
         int logicalCores = Runtime.getRuntime().availableProcessors();
-        int threadCount = Math.max(1, logicalCores - 1);
-		//int threadCount = 2;
+        //int threadCount = Math.max(1, logicalCores - 1);
+		int threadCount = 10;
         // Opção B: Manual (Ex: vindo de um JSpinner da interface)
         // int threadCount = 10;
 
@@ -96,7 +98,7 @@ public class ParallelModularCircleDetector {
 		// ATIVA O MODO DE EXPLORAÇÃO DETALHADO!
 		optimizer.setVerboseMode(true);
 		optimizer.setLogResults(true);
-		optimizer.setLogFileName("27threads.csv");
+		optimizer.setLogFileName("1threads.csv");
 		long startTime = System.nanoTime();
 		List<OptParam> bestParams = optimizer.runOptimization(500);
 

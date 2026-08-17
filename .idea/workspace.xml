@@ -4,15 +4,47 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b48585ba-b6f6-43ff-811c-78cf578d762a" name="Changes" comment="" />
+    <list default="true" id="b48585ba-b6f6-43ff-811c-78cf578d762a" name="Changes" comment="fixed bug in the multi thread environment that made the algoritm explore repeated states.&#10;Added ShadedSphere class and analogous classes to generate a matrix os spheres and explore more complex images">
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Utilities/RegionCombiner.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Utilities/test/TestCircleThickNoFilter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/testImages/Thumbs.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ParallelModularCircleDetector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ParallelModularCircleDetector.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7
-}]]></component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;EDSONCV&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/EDSONCV/CircleTests.git&quot;,
+    &quot;accountId&quot;: &quot;a06d5038-05aa-4a42-b718-0b77e62c9c2b&quot;
+  }
+}</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="Security Analysis" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
   <component name="ProjectId" id="3C8JN3uJ7re7FBjTgH6qBWwuPVi" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -20,61 +52,54 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Application.AdvancedModularCircleDetectorApp (1).executor": "Run",
+    "Application.AdvancedModularCircleDetectorApp.executor": "Run",
     "Application.CircleDetectorApp.executor": "Run",
+    "Application.CircleMatrixApp.executor": "Run",
     "Application.ImageCorrectorApp.executor": "Run",
     "Application.ImageCorrectorSlider.executor": "Run",
+    "Application.ParallelModularCircleDetector.executor": "Run",
+    "Application.RegionCombiner.executor": "Run",
+    "Application.ShadedSphere (1).executor": "Run",
+    "Application.ShadedSphere.executor": "Run",
+    "Application.ShadedSphereMatrixApp.executor": "Run",
+    "Application.ShadedSphereMatrixGenerator.executor": "Run",
+    "Application.SphereMatrixViewer (1).executor": "Run",
+    "Application.SphereMatrixViewer.executor": "Run",
+    "Application.TestCanny.executor": "Run",
+    "Application.TestCircleThickAllFilters.executor": "Run",
+    "Application.TestCircleThickGauss.executor": "Run",
+    "Application.TestCircleThickGaussCLAHE.executor": "Run",
+    "Application.TestCircleThickNoFilter.executor": "Run",
+    "Application.TestCircleThinGauss.executor": "Run",
+    "Application.TestCircleThinGaussCLAHE.executor": "Run",
+    "Application.TestSphereAllFilters.executor": "Run",
+    "Application.TesteCannyGUI.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
-    "project.structure.last.edited": "Modules",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "vcs.Subversion"
+    "settings.editor.selected.configurable": "reference.settings.project.maven.testRunning",
+    "two.files.diff.last.used.file": "W:/workspace/CircleTests/src/ParallelReinfLearningMod/ParallelModularCircleDetector.java",
+    "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
   <component name="RunManager" selected="Application.ParallelModularCircleDetector">
-    <configuration name="CircleDetectorApp" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="CirclesGenerators.CircleDetectorApp" />
-      <module name="CircleTests" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="CirclesGenerators.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="ImageCorrectorApp" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="lensCorrection.ImageCorrectorApp" />
-      <module name="CircleTests" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="lensCorrection.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="ImageCorrectorSlider" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="lensCorrection.ImageCorrectorSlider" />
-      <module name="CircleTests" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="lensCorrection.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="ParallelModularCircleDetector" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="ParallelReinfLearningMod.ParallelModularCircleDetector" />
-      <module name="CircleTests" />
+      <module name="Circle-Tests" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="ParallelReinfLearningMod.*" />
@@ -85,24 +110,77 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="TestCircleThickGauss" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="Utilities.test.TestCircleThickGauss" />
+      <module name="Circle-Tests" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="Utilities.test.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TestCircleThickGaussCLAHE" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="Utilities.test.TestCircleThickGaussCLAHE" />
+      <module name="Circle-Tests" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="Utilities.test.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TestCircleThickNoFilter" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="Utilities.test.TestCircleThickNoFilter" />
+      <module name="Circle-Tests" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="Utilities.test.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TestSphereAllFilters" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="Utilities.test.TestSphereAllFilters" />
+      <module name="Circle-Tests" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="Utilities.test.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
         <item itemvalue="Application.ParallelModularCircleDetector" />
-        <item itemvalue="Application.ImageCorrectorApp" />
-        <item itemvalue="Application.ImageCorrectorSlider" />
-        <item itemvalue="Application.CircleDetectorApp" />
+        <item itemvalue="Application.TestSphereAllFilters" />
+        <item itemvalue="Application.TestCircleThickNoFilter" />
+        <item itemvalue="Application.TestCircleThickGaussCLAHE" />
+        <item itemvalue="Application.TestCircleThickGauss" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.26830.84" />
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
       </set>
     </attachedChunks>
   </component>
   <component name="SvnConfiguration">
-    <configuration>C:\Users\valle\AppData\Roaming\Subversion</configuration>
+    <configuration>C:\Users\edsoncv\AppData\Roaming\Subversion</configuration>
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -111,7 +189,96 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1775761232037</updated>
+      <workItem from="1776257463945" duration="1664000" />
+      <workItem from="1776259717762" duration="423000" />
+      <workItem from="1776260154692" duration="1341000" />
+      <workItem from="1776261513067" duration="48692000" />
+      <workItem from="1776873933365" duration="1522000" />
+      <workItem from="1776884323207" duration="767000" />
+      <workItem from="1777028828323" duration="81088000" />
+      <workItem from="1777505232904" duration="5581000" />
     </task>
+    <task id="LOCAL-00001" summary="added pom.xml file.&#10;minor tests on Circledetector and GaussianBlur">
+      <option name="closed" value="true" />
+      <created>1776275030174</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1776275030174</updated>
+    </task>
+    <task id="LOCAL-00002" summary="-added TesteCannyGui to test the internal result of Canny, used in circles detection.&#10;-Changed Hough Circles algorithm (Imgproc.HOUGH_GRADIENT_ALT) in ModularEnvironment.java (line 76(&#10;Changed Results visualizer to save images and data as .csv values (csv values are saved with ',' as decimal separator and ';' as item separator)">
+      <option name="closed" value="true" />
+      <created>1776339502593</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1776339502593</updated>
+    </task>
+    <task id="LOCAL-00003" summary="-added Intersection Over Union metrics to improve circle detection&#10;-improved output to display mean IoU metric in console&#10;-changed ResultVisualizerCompare.java to show and save this metric">
+      <option name="closed" value="true" />
+      <created>1776351956697</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1776351956697</updated>
+    </task>
+    <task id="LOCAL-00004" summary="added/moved test images to folder testImages">
+      <option name="closed" value="true" />
+      <created>1776352238110</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1776352238110</updated>
+    </task>
+    <task id="LOCAL-00005" summary="improved ParallelModularCircleDetector.java to avoid that mulpliple threads explore the same conditions.&#10;implemented a strategy to improve exploration when the results are not improved.">
+      <option name="closed" value="true" />
+      <created>1776441424923</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1776441424923</updated>
+    </task>
+    <task id="LOCAL-00006" summary="added log and verbose output of each thread&#10;added constraint to avoid that in the random exploratory phase the parameters are out of range">
+      <option name="closed" value="true" />
+      <created>1777039160204</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1777039160204</updated>
+    </task>
+    <task id="LOCAL-00007" summary="fixed bug in the multi thread environment that made the algoritm explore repeated states.&#10;Added ShadedSphere class and analogous classes to generate a matrix os spheres and explore more complex images">
+      <option name="closed" value="true" />
+      <created>1777569786395</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1777569786395</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="added pom.xml file.&#10;minor tests on Circledetector and GaussianBlur" />
+    <MESSAGE value="-added TesteCannyGui to test the internal result of Canny, used in circles detection.&#10;-Changed Hough Circles algorithm (Imgproc.HOUGH_GRADIENT_ALT) in ModularEnvironment.java (line 76(&#10;Changed Results visualizer to save images and data as .csv values (csv values are saved with ',' as decimal separator and ';' as item separator)" />
+    <MESSAGE value="-added Intersection Over Union metrics to improve circle detection&#10;-improved output to display mean IoU metric in console&#10;-changed ResultVisualizerCompare.java to show and save this metric" />
+    <MESSAGE value="added/moved test images to folder testImages" />
+    <MESSAGE value="improved ParallelModularCircleDetector.java to avoid that mulpliple threads explore the same conditions.&#10;implemented a strategy to improve exploration when the results are not improved." />
+    <MESSAGE value="added log and verbose output of each thread&#10;added constraint to avoid that in the random exploratory phase the parameters are out of range" />
+    <MESSAGE value="fixed bug in the multi thread environment that made the algoritm explore repeated states.&#10;Added ShadedSphere class and analogous classes to generate a matrix os spheres and explore more complex images" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixed bug in the multi thread environment that made the algoritm explore repeated states.&#10;Added ShadedSphere class and analogous classes to generate a matrix os spheres and explore more complex images" />
   </component>
 </project>
