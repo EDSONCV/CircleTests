@@ -300,7 +300,27 @@ public class ModularEnvironment {
 
     public ProcessingPipeline getPipelinePrototype() { return this.localPipeline; } // Retorna o local
     public Supplier<ProcessingPipeline> getPipelineFactory() { return this.pipelineFactory; } // Repassa a fábrica
+    /**
+     * Atalho para rodar a detecção com um conjunto de parâmetros e já retornar a nota (score).
+     * Usado pela camada superior de otimização de permutações.
+     */
+    public double evaluate(List<OptParam> params) {
+        // 1. Roda a detecção com os parâmetros fornecidos
+        List<Circle> detected = this.runDetection(params);
 
+        // 2. Calcula e retorna a pontuação final
+        return this.calculateReward(detected);
+    }
+
+    /**
+     * Limpa a imagem base da memória nativa do OpenCV (C++).
+     * Essencial para evitar vazamento de memória ao rodar dezenas de permutações.
+     */
+    public void releaseResources() {
+        if (this.originalImage != null && !this.originalImage.empty()) {
+            this.originalImage.release();
+        }
+    }
 
 
 

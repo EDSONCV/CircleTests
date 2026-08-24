@@ -1,12 +1,14 @@
 package ParallelReinfLearningMod;
 
 import javax.swing.SwingUtilities;
-
+import java.util.ArrayList;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
+import filters.strategies.FilterOrderStrategy;
+import filters.strategies.IncrementalPermutationStrategy;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
@@ -15,8 +17,6 @@ import tstDataCircles.Data1;
 
 
 public class ParallelModularCircleDetector {
-    
-
 
     public static void main(String[] args) {
     	// --- LOAD NATIVE LIBRARY ---
@@ -31,104 +31,152 @@ public class ParallelModularCircleDetector {
             System.err.println("Native code library failed to load. \n" + e);
             System.exit(1);
         }
-// --- 1. A FÁBRICA DE PIPELINES (SUPPLIER) ---
-		// Em vez de instanciar direto, criamos uma "receita" que gera pipelines e filtros isolados
-		Supplier<ProcessingPipeline> pipelineFactory = () -> {
-			ProcessingPipeline p = new ProcessingPipeline();
-//			p.addFilter(new BrightnessContrastFilter());
-//			p.addFilter(new GaussianBlurFilter());
 
-			p.addFilter(new CLAHEFilter());
-//			p.addFilter(new BilateralFilter());
-			p.addFilter(new AdaptiveThreshFilter());
-//			p.addFilter(new MorphClosingFilter());
-			p.addFilter(new GaussianBlurFilter());
+	// =========================================================
+	// 2. FILTER DEFINITION
+	// =========================================================
+	// Select filters here
+		List<Class<? extends ImageFilter>> baseFilters = Arrays.asList(
+		//		CLAHEFilter.class,
+				AdaptiveThreshMeanCFilter.class,
+				GaussianBlurFilter.class
+		);
 
 
-			// Adicione os outros filtros que estava usando aqui
-			return p;
-		};
-        
-        // --- 2. CONFIGURAÇÃO DO AMBIENTE ---
+		// =========================================================
+		// 3. Prepare the task order (Single order, Incremental Permutaion, etc.
+		// =========================================================
+		// Escolha a estratégia desejada comentando/descomentando:
+
+        // FilterOrderStrategy strategy = new SingleOrderStrategy();
+		FilterOrderStrategy strategy = new IncrementalPermutationStrategy();
+
+      // Generate the filter order and combinations
+		List<List<Class<? extends ImageFilter>>> allOrders = strategy.generateOrders(baseFilters);
+
+
+		// Track global optimum
+		double globalBestScore = -Double.MAX_VALUE;
+		List<OptParam> globalBestParams = null;
+		List<Class<? extends ImageFilter>> globalBestOrder = null;
+		Supplier<ProcessingPipeline> globalBestPipelineFactory = null;
+
+        // --- 2. CONFIGURE ENVIRONMMENT
         List<Circle> groundTruth = Data1.getData();
         System.out.println("number of initial circles: " + groundTruth.size());
         
-     // --- 3. CONFIGURAÇÃO DAS RECOMPENSAS (SEM NÚMEROS MÁGICOS) ---
+     // --- 3. CONFIGURE REWARDS ---
         RewardConfig myConfig = new RewardConfig();
         
-        // Usuário define suas regras:
-        myConfig.setMatchBonus(50.0);           // Quero valorizar muito o acerto
-        myConfig.setMissPenalty(20.0);          // Omissão é grave
-        myConfig.setNoisePenalty(-5.0);         // Ruído é mais grave que o padrão
-        myConfig.setSanityLimitAbsolute(900);    // Se passar de 30 círculos, aborte
-        myConfig.setExcessPenaltyExponent(2.0); // Punição quadrática rigorosa
-		myConfig.setIouThreshold(0.95);
-		myConfig.setTargetMeanIoU(0.98);
-		myConfig.setPatienceLimit(50);
-		// Para imagens onde a posição do centro é mais difícil de achar que o raio:
-		myConfig.setWeightIoU(0.9);
-		myConfig.setWeightCenter(0.1);
-		myConfig.setMaxCenterDistance(5);
+        // USER RULES
+        myConfig.setMatchBonus(50.0);           // MATCH BONUS
+        myConfig.setMissPenalty(20.0);          // IF CIRCLE IS NOT DETECTED = PENALTY
+        myConfig.setNoisePenalty(-5.0);         // NOISE (UNREAL CIRCLE ) = PENALTY
+        myConfig.setSanityLimitAbsolute(900);    // MORE THAN THIS CIRCLES = PENALTY
+        myConfig.setExcessPenaltyExponent(2.0); // PENALTY WEIGHTS
+		myConfig.setIouThreshold(0.95);         // intersection over union threshold (to consider a good match)
+		myConfig.setTargetMeanIoU(0.9);         // target mean IoU
+		myConfig.setPatienceLimit(20);          // if no bether results are found after this number of batches, try other parameters
+		// For images where center position is harder to find than the radius
+		myConfig.setWeightIoU(0.9);   // weight for IoU
+		myConfig.setWeightCenter(0.1);  // weight for Euclidian Center Distance
+		myConfig.setMaxCenterDistance(5);  // max center distance to avois penalty
 
-        // 4. Injeta a configuração no Ambiente
-        //String imagePath ="testImages/matrix_output.png";
-		String imagePath ="testImages/shaded_spheres_ring.png";
+        // 4.load files
+        String imagePath ="testImages/matrix_output.png";
+		//String imagePath ="testImages/shaded_spheres_ring.png";
 		//String imagePath ="testImages/matrix_output_thin.png";
 
-		ModularEnvironment env = new ModularEnvironment(imagePath, groundTruth, pipelineFactory, myConfig);
-     // --- 5. CONFIGURAÇÃO DE MULTITHREADING ---
-        // Opção A: Automático (Núcleos lógicos - 1 para deixar o OS respirar)
-        int logicalCores = Runtime.getRuntime().availableProcessors();
-        //int threadCount = Math.max(1, logicalCores - 1);
-		int threadCount = 10;
-        // Opção B: Manual (Ex: vindo de um JSpinner da interface)
-        // int threadCount = 10;
 
-        System.out.println("Hardware detectado: " + logicalCores + " núcleos.");
-        System.out.println("Iniciando Otimizador com " + threadCount + " threads em paralelo.");
-
-        // --- 6. INSTANCIAÇÃO E EXECUÇÃO DO OTIMIZADOR ---
-        // Passamos os parâmetros iniciais do pipeline para começar a exploração
-
-        List<OptParam> initialParams = pipelineFactory.get().getAllParameters();
-// measure time
-
-		ParallelOptimizer optimizer = new ParallelOptimizer(threadCount, env, initialParams);
-
-		// ATIVA O MODO DE EXPLORAÇÃO DETALHADO!
-		optimizer.setVerboseMode(true);
-		optimizer.setLogResults(true);
-		optimizer.setLogFileName("1threads.csv");
-		long startTime = System.nanoTime();
-		List<OptParam> bestParams = optimizer.runOptimization(500);
+		for (int i = 0; i < allOrders.size(); i++) {
+			List<Class<? extends ImageFilter>> currentOrder = allOrders.get(i);
 
 
-        System.out.println("=== Otimização Finalizada ===");
-        System.out.println("Melhores Parâmetros: " + bestParams);
-		long endTime = System.nanoTime();
-		long durationNanos = endTime - startTime;
-		System.out.println("Execution time: " + durationNanos + " nano seconds");
-		System.out.println("Execution time: " + durationNanos/1.0E9 + " seconds");
+			System.out.println("\n--- Testando Ordem " + (i+1) + "/" + allOrders.size() + " ---");
+
+			// Dynamic Factory of filter combinatin/permutations
+			Supplier<ProcessingPipeline> dynamicPipelineFactory = () -> {
+				ProcessingPipeline p = new ProcessingPipeline();
+				try {
+					for (Class<? extends ImageFilter> filterClass : currentOrder) {
+						p.addFilter((ImageFilter) filterClass.getDeclaredConstructor().newInstance());
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				return p;
+			};
+
+			// Starting Modular environment and parameters ...
+			ModularEnvironment env = new ModularEnvironment(imagePath, groundTruth, dynamicPipelineFactory, myConfig);
+			List<OptParam> initialParams = dynamicPipelineFactory.get().getAllParameters();
+
+			// ... [Starting ParallelOptimizer] ...
+			// --- 5. MULTITHREADING CONFIGURE BASED ON AVAILABLE CORES
+			// Option A: Automatic
+			int logicalCores = Runtime.getRuntime().availableProcessors();
+			//int threadCount = Math.max(1, logicalCores - 1);
+			// Option B: Manual
+			 int threadCount = 10;
+			System.out.println("Hardware detected: " + logicalCores + " cores.");
+			System.out.println("Start Otimizer with  " + threadCount + " parallel threads.");
+
+			ParallelOptimizer optimizer = new ParallelOptimizer(threadCount, env, initialParams);
+
+			// Optional: Verbose mode
+
+			optimizer.setVerboseMode(true);
+			optimizer.setLogResults(true);
+			optimizer.setLogFileName("666threads.csv");
+			long startTime = System.nanoTime();
 
 
+			List<OptParam> bestParamsForThisOrder = optimizer.runOptimization(500);
+			double score = env.evaluate(bestParamsForThisOrder);
 
-        // --- 7. VISUALIZAÇÃO DOS RESULTADOS ---
-        // Precisamos aplicar os parâmetros vencedores de volta ao Pipeline principal
-        // para gerar as imagens de debug corretamente.
+			if (score > globalBestScore) {
+				globalBestScore = score;
+				globalBestParams = bestParamsForThisOrder;
+				globalBestOrder = currentOrder;
+				globalBestPipelineFactory = dynamicPipelineFactory;
+			}
 
+			System.out.println("=== Optimization Finished ===");
+			System.out.println("Best Parameters: " + globalBestParams);
+			long endTime = System.nanoTime();
+			long durationNanos = endTime - startTime;
+			System.out.println("Execution time: " + durationNanos + " nano seconds");
+			System.out.println("Execution time: " + durationNanos/1.0E9 + " seconds");
+
+			// Clean native memory
+			env.releaseResources();
+			System.gc();
+		}
+
+
+        // --- 7.  RESULTS Visualization ---
+
+// Criating 'final' variables to GUIs Swing Thread see
+		final Supplier<ProcessingPipeline> finalFactory = globalBestPipelineFactory;
+		final List<OptParam> finalParams = globalBestParams;
 
 		SwingUtilities.invokeLater(() -> {
 			Mat originalImg = Imgcodecs.imread(imagePath);
 
-			// 1. Puxa um pipeline da fábrica estritamente para gerar o histórico de imagens (Debug)
-			ProcessingPipeline finalPipeline = pipelineFactory.get();
-			finalPipeline.syncParameters(bestParams);
+			// 1. Call winner thread/optimization to generate image pipeline(Debug)
+
+			ProcessingPipeline finalPipeline = finalFactory.get();
+
+			finalPipeline.syncParameters(finalParams);
+
 			List<StepResult> debugSteps = finalPipeline.runPipelineWithDebug(originalImg);
 
-			// --- 2. CORREÇÃO AQUI: Execução Final Segura ---
-			// Passamos os melhores parâmetros diretamente para o ambiente.
-			// O ambiente encarrega-se de sincronizar o seu pipeline local e rodar o Hough.
-			List<Circle> finalCircles = env.runDetection(bestParams);
+			// rebuild with winner/best results
+
+			ModularEnvironment finalEnv = new ModularEnvironment(imagePath, groundTruth, finalFactory, myConfig);
+
+
+			List<Circle> finalCircles = finalEnv.runDetection(finalParams);
 
 			String houghInfo = finalPipeline.getHoughParamsString();
 
@@ -137,17 +185,12 @@ public class ParallelModularCircleDetector {
 					finalCircles,
 					groundTruth,
 					houghInfo,
-					"Resultado Otimização Paralela");
+					"Parallel Optimization Results");
 
-			System.out.println("Fim. Parâmetros Finais: " + finalPipeline.getAllParameters());
-			System.out.println("numero de círculos: " + finalCircles.size());
+			System.out.println("Finished. Final Parameters: " + finalPipeline.getAllParameters());
+			System.out.println("Number of circles found: " + finalCircles.size());
 		});
 
     }
 
-    private static String getSimpleState(int det, int truth) {
-        if (det == truth) return "EXACT";
-        if (det > truth) return "TOO_MANY";
-        return "TOO_FEW";
-    }
 }

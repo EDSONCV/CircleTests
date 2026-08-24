@@ -4,13 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b48585ba-b6f6-43ff-811c-78cf578d762a" name="Changes" comment="fixed bug in the multi thread environment that made the algoritm explore repeated states.&#10;Added ShadedSphere class and analogous classes to generate a matrix os spheres and explore more complex images">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Utilities/RegionCombiner.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Utilities/test/TestCircleThickNoFilter.java" afterDir="false" />
+    <list default="true" id="b48585ba-b6f6-43ff-811c-78cf578d762a" name="Changes" comment="Added some missing files">
+      <change afterPath="$PROJECT_DIR$/src/filters/AdaptiveThreshGaussCFilter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/filters/strategies/CombinatoricsHelper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/filters/strategies/FilterOrderStrategy.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/filters/strategies/FullPermutationStrategy.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/filters/strategies/IncrementalPermutationStrategy.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/filters/strategies/SingleOrderStrategy.java" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/testImages/Thumbs.db" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ModularEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ModularEnvironment.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ParallelModularCircleDetector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ParallelModularCircleDetector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/filters/AdaptiveThreshFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/AdaptiveThreshMeanCFilter.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,6 +25,7 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
@@ -91,11 +97,16 @@
     "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "reference.settings.project.maven.testRunning",
+    "settings.editor.selected.configurable": "vcs.Subversion.Presentation",
     "two.files.diff.last.used.file": "W:/workspace/CircleTests/src/ParallelReinfLearningMod/ParallelModularCircleDetector.java",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="filters.strategies" />
+    </key>
+  </component>
   <component name="RunManager" selected="Application.ParallelModularCircleDetector">
     <configuration name="ParallelModularCircleDetector" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="ParallelReinfLearningMod.ParallelModularCircleDetector" />
@@ -254,7 +265,23 @@
       <option name="project" value="LOCAL" />
       <updated>1777569786395</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Added region combiner to make resumed versions of the output images.">
+      <option name="closed" value="true" />
+      <created>1786992467729</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1786992467729</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Added some missing files">
+      <option name="closed" value="true" />
+      <created>1786999772172</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1786999772172</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -279,6 +306,12 @@
     <MESSAGE value="improved ParallelModularCircleDetector.java to avoid that mulpliple threads explore the same conditions.&#10;implemented a strategy to improve exploration when the results are not improved." />
     <MESSAGE value="added log and verbose output of each thread&#10;added constraint to avoid that in the random exploratory phase the parameters are out of range" />
     <MESSAGE value="fixed bug in the multi thread environment that made the algoritm explore repeated states.&#10;Added ShadedSphere class and analogous classes to generate a matrix os spheres and explore more complex images" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixed bug in the multi thread environment that made the algoritm explore repeated states.&#10;Added ShadedSphere class and analogous classes to generate a matrix os spheres and explore more complex images" />
+    <MESSAGE value="Added region combiner to make resumed versions of the output images." />
+    <MESSAGE value="Added some missing files" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added some missing files" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>
