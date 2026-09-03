@@ -1,12 +1,11 @@
 package filters;
-import java.util.List;
 
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
-import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-public class AdaptiveThreshMeanCFilter implements ImageFilter {
+import java.util.List;
+
+public class AdaptiveThreshMeanCFilterInverse implements ImageFilter {
     // Tamanho do bloco de vizinhança (deve ser ímpar)
     private OptParam blockSize = new OptParam("Thresh_Block", 21, 3, 51, 2, true);
     // Constante subtraída da média (ajuste fino de ruído)
@@ -18,7 +17,7 @@ public class AdaptiveThreshMeanCFilter implements ImageFilter {
 
         Imgproc.adaptiveThreshold(input, output, 255,
                 Imgproc.ADAPTIVE_THRESH_MEAN_C,
-                Imgproc.THRESH_BINARY,
+                Imgproc.THRESH_BINARY_INV,
                 (int)blockSize.getValue(),
                 cParam.getValue());
         return output;

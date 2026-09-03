@@ -8,12 +8,15 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import filters.strategies.FilterOrderStrategy;
+import filters.strategies.FullPermutationStrategy;
 import filters.strategies.IncrementalPermutationStrategy;
+import filters.strategies.SingleOrderStrategy;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 import filters.*;
-import tstDataCircles.Data1;
+import org.opencv.imgproc.Imgproc;
+import tstDataCircles.Data2;
 
 
 public class ParallelModularCircleDetector {
@@ -25,20 +28,27 @@ public class ParallelModularCircleDetector {
         	String fileExt = ".dll";
         	 final File nativeLibrary = new File("lib/java/x64/" + filePre + Core.NATIVE_LIBRARY_NAME + fileExt);
              System.load(nativeLibrary.getAbsolutePath());
+			System.out.println("Opencv Version   " + Core.NATIVE_LIBRARY_NAME );
         } catch (UnsatisfiedLinkError e) {
             // Option B: Load directly from absolute path if Option A fails
             // System.load("C:/path/to/opencv/build/java/x64/opencv_java4x.dll");
             System.err.println("Native code library failed to load. \n" + e);
             System.exit(1);
         }
+	// --- 1. Select HOUGH strategy ---
+	 final int selectedHoughMethod =  Imgproc.HOUGH_GRADIENT_ALT;
+	//	final int selectedHoughMethod = Imgproc.HOUGH_GRADIENT;
+		// Select between native Houg circles or pure Java implementation
+		final boolean usePureJava = false; // true = Java  | false = OpenCV Native
 
 	// =========================================================
 	// 2. FILTER DEFINITION
 	// =========================================================
 	// Select filters here
 		List<Class<? extends ImageFilter>> baseFilters = Arrays.asList(
+		//		BilateralFilter.class,
 		//		CLAHEFilter.class,
-				AdaptiveThreshMeanCFilter.class,
+		//		AdaptiveThreshMeanCFilter.class,
 				GaussianBlurFilter.class
 		);
 
@@ -48,8 +58,9 @@ public class ParallelModularCircleDetector {
 		// =========================================================
 		// Escolha a estratégia desejada comentando/descomentando:
 
-        // FilterOrderStrategy strategy = new SingleOrderStrategy();
-		FilterOrderStrategy strategy = new IncrementalPermutationStrategy();
+         FilterOrderStrategy strategy = new SingleOrderStrategy();
+		//FilterOrderStrategy strategy = new FullPermutationStrategy();
+		//FilterOrderStrategy strategy = new IncrementalPermutationStrategy();
 
       // Generate the filter order and combinations
 		List<List<Class<? extends ImageFilter>>> allOrders = strategy.generateOrders(baseFilters);
@@ -62,7 +73,7 @@ public class ParallelModularCircleDetector {
 		Supplier<ProcessingPipeline> globalBestPipelineFactory = null;
 
         // --- 2. CONFIGURE ENVIRONMMENT
-        List<Circle> groundTruth = Data1.getData();
+        List<Circle> groundTruth = Data2.getData();
         System.out.println("number of initial circles: " + groundTruth.size());
         
      // --- 3. CONFIGURE REWARDS ---
@@ -72,7 +83,7 @@ public class ParallelModularCircleDetector {
         myConfig.setMatchBonus(50.0);           // MATCH BONUS
         myConfig.setMissPenalty(20.0);          // IF CIRCLE IS NOT DETECTED = PENALTY
         myConfig.setNoisePenalty(-5.0);         // NOISE (UNREAL CIRCLE ) = PENALTY
-        myConfig.setSanityLimitAbsolute(900);    // MORE THAN THIS CIRCLES = PENALTY
+        myConfig.setSanityLimitAbsolute(200);    // MORE THAN THIS CIRCLES = PENALTY
         myConfig.setExcessPenaltyExponent(2.0); // PENALTY WEIGHTS
 		myConfig.setIouThreshold(0.95);         // intersection over union threshold (to consider a good match)
 		myConfig.setTargetMeanIoU(0.9);         // target mean IoU
@@ -83,8 +94,10 @@ public class ParallelModularCircleDetector {
 		myConfig.setMaxCenterDistance(5);  // max center distance to avois penalty
 
         // 4.load files
-        String imagePath ="testImages/matrix_output.png";
+        //String imagePath ="testImages/matrix_output.png";
 		//String imagePath ="testImages/shaded_spheres_ring.png";
+		//String imagePath ="testImages/shaded_spheres_output_s15.png";
+		String imagePath ="testImages/DSC00582.png";
 		//String imagePath ="testImages/matrix_output_thin.png";
 
 
@@ -92,11 +105,14 @@ public class ParallelModularCircleDetector {
 			List<Class<? extends ImageFilter>> currentOrder = allOrders.get(i);
 
 
-			System.out.println("\n--- Testando Ordem " + (i+1) + "/" + allOrders.size() + " ---");
+			System.out.println("\n--- Testing Order " + (i+1) + "/" + allOrders.size() + " ---");
 
 			// Dynamic Factory of filter combinatin/permutations
 			Supplier<ProcessingPipeline> dynamicPipelineFactory = () -> {
 				ProcessingPipeline p = new ProcessingPipeline();
+				//set Houg algorithm!
+				p.setHoughMethod(selectedHoughMethod);
+				p.setUsePureJavaHough(usePureJava);
 				try {
 					for (Class<? extends ImageFilter> filterClass : currentOrder) {
 						p.addFilter((ImageFilter) filterClass.getDeclaredConstructor().newInstance());
@@ -115,9 +131,9 @@ public class ParallelModularCircleDetector {
 			// --- 5. MULTITHREADING CONFIGURE BASED ON AVAILABLE CORES
 			// Option A: Automatic
 			int logicalCores = Runtime.getRuntime().availableProcessors();
-			//int threadCount = Math.max(1, logicalCores - 1);
+			int threadCount = Math.max(1, logicalCores - 1);
 			// Option B: Manual
-			 int threadCount = 10;
+			// int threadCount = 10;
 			System.out.println("Hardware detected: " + logicalCores + " cores.");
 			System.out.println("Start Otimizer with  " + threadCount + " parallel threads.");
 
@@ -162,6 +178,7 @@ public class ParallelModularCircleDetector {
 
 		SwingUtilities.invokeLater(() -> {
 			Mat originalImg = Imgcodecs.imread(imagePath);
+			System.out.println("Image Size width:  " + originalImg.cols() + "  height: "+ originalImg.rows());
 
 			// 1. Call winner thread/optimization to generate image pipeline(Debug)
 

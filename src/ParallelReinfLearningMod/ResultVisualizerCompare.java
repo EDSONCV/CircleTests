@@ -394,6 +394,7 @@ public class ResultVisualizerCompare extends JFrame {
             Point center = new Point(gt.x, gt.y);
             // Desenha apenas o contorno, linha tracejada visual ou fina
             Imgproc.circle(img, center, (int) gt.r, new Scalar(255, 0, 0), 2); // BGR: Azul
+           // System.out.println("gt inside ResultVisualizer " + "cx: " + gt.x +" cy: " + gt.y + " radius : " + gt.r );
         }
 
         // 2. Desenha os detectados pelo algoritmo por cima (Vermelho e Verde)

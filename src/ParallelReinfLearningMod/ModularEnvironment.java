@@ -1,4 +1,5 @@
 package ParallelReinfLearningMod;
+import filters.implementations.HoughCirclesJavaAlt;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
@@ -10,6 +11,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+
+import static filters.implementations.HoughCirclesJavaAlt.houghCirclesAlt;
 
 public class ModularEnvironment {
     private String imagePath;
@@ -83,27 +86,48 @@ public class ModularEnvironment {
     private List<Circle> runDetectionInternal(ProcessingPipeline pipeToUse) {
         // A. Executa os filtros (Blur, Canny, etc.)
         Mat processedImage = pipeToUse.executePipeline(originalImage);
-        
-        Mat circlesMat = new Mat();
+
         List<Circle> detectedList = new ArrayList<>();
-
+        Mat circlesMat = new Mat();
         try {
-            // B. Executa HoughCircles
-            // Note que usamos 'pipeToUse' (local), não 'this.pipelinePrototype'
-            Imgproc.HoughCircles(processedImage, circlesMat, Imgproc.HOUGH_GRADIENT_ALT,
-                pipeToUse.getDp(), 
-                pipeToUse.getMinDist(),
-                pipeToUse.getParam1(), 
-                pipeToUse.getParam2(),
-                pipeToUse.getMinRadius(), 
-                pipeToUse.getMaxRadius());
+            if(!pipeToUse.isUsePureJavaHough()) {
 
-            for (int i = 0; i < circlesMat.cols(); i++) {
-                double[] c = circlesMat.get(0, i);
-                detectedList.add(new Circle(c[0], c[1], c[2]));
+
+                // B. Runs HoughCircles
+                // Note que usamos 'pipeToUse' (local), não 'this.pipelinePrototype'
+                // native implementation
+
+
+                Imgproc.HoughCircles(processedImage, circlesMat, pipeToUse.getHoughMethod(),
+                        pipeToUse.getDp(),
+                        pipeToUse.getMinDist(),
+                        pipeToUse.getParam1(),
+                        pipeToUse.getParam2(),
+                        pipeToUse.getMinRadius(),
+                        pipeToUse.getMaxRadius());
+
+            /*System.out.println("Inside Modular env. Parameters: " +  pipeToUse.getDp() + " "  + pipeToUse.getMinDist() + " "  +
+                            pipeToUse.getParam1()  + " "  +   pipeToUse.getParam2() + " "  +  pipeToUse.getMinRadius() + " "  +
+                    pipeToUse.getMaxRadius()) ;*/
+                for (int i = 0; i < circlesMat.cols(); i++) {
+                    double[] c = circlesMat.get(0, i);
+                    detectedList.add(new Circle(c[0], c[1], c[2]));
+                }
+            }
+            else{
+           //java implementation
+            List<HoughCirclesJavaAlt.CircleData> circles;
+            circles =  houghCirclesAlt(
+                    processedImage, (float)  pipeToUse.getDp(), (float) pipeToUse.getMinDist(),
+                    pipeToUse.getMinRadius(), pipeToUse.getMaxRadius(), (int) pipeToUse.getParam1(), (int)  pipeToUse.getParam2(),null);
+
+            for (int i = 0; i < circles.size(); i++) {
+
+                detectedList.add(new Circle(circles.get(i).cx, circles.get(i).cy, circles.get(i).radius));
+            }
             }
         } catch (Exception e) {
-            // Log de erro silencioso ou console error se necessário
+            // implement Log
         } finally {
             // C. Liberação de memória (Crítico em Multithread)
             if (processedImage != null) processedImage.release();
@@ -113,9 +137,8 @@ public class ModularEnvironment {
         return detectedList;
     }
 
-    // --- CÁLCULO DE RECOMPENSA (Mantido igual à versão anterior) ---
+    // --- Reward Calculation
     // uses boolean metrics to say if a circle is good or not
-
     //uses quantitative metrics to say that a detection/circle is good
 
     public double calculateReward(List<Circle> detected) {
