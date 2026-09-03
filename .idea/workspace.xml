@@ -4,18 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b48585ba-b6f6-43ff-811c-78cf578d762a" name="Changes" comment="Added some missing files">
-      <change afterPath="$PROJECT_DIR$/src/filters/AdaptiveThreshGaussCFilter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/filters/strategies/CombinatoricsHelper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/filters/strategies/FilterOrderStrategy.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/filters/strategies/FullPermutationStrategy.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/filters/strategies/IncrementalPermutationStrategy.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/filters/strategies/SingleOrderStrategy.java" afterDir="false" />
+    <list default="true" id="b48585ba-b6f6-43ff-811c-78cf578d762a" name="Changes" comment="Splitted Adaptive Threshold with more two strategies (THRESH_BINARY_INV and THRESH_BINARY) for each filter.&#10;Added a new Dataset for test (Data2).&#10;Implemented a Java version of Hough detection that can be switched with a flag at ParallelModularCircleDetector.java &#10;Modified IncrementalPermutationStrategy to start with a pure circle detection at start without any filter&#10;Implemented the 2 strategies of Hough detection as a flag (HOUGH_GRADIENT_ALT or HOUGH_GRADIENT) that deals automatically with the parameters limits of each flag.&#10;Added debug to ResultVisualizerCompare.java.&#10;Added DSC00582.png to be tested with Data2.java&#10;Added some english translation">
       <change afterPath="$PROJECT_DIR$/testImages/Thumbs.db" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ModularEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ModularEnvironment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ParallelModularCircleDetector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ParallelModularCircleDetector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/AdaptiveThreshFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/AdaptiveThreshMeanCFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,64 +48,72 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Application.AdvancedModularCircleDetectorApp (1).executor": "Run",
-    "Application.AdvancedModularCircleDetectorApp.executor": "Run",
-    "Application.CircleDetectorApp.executor": "Run",
-    "Application.CircleMatrixApp.executor": "Run",
-    "Application.ImageCorrectorApp.executor": "Run",
-    "Application.ImageCorrectorSlider.executor": "Run",
-    "Application.ParallelModularCircleDetector.executor": "Run",
-    "Application.RegionCombiner.executor": "Run",
-    "Application.ShadedSphere (1).executor": "Run",
-    "Application.ShadedSphere.executor": "Run",
-    "Application.ShadedSphereMatrixApp.executor": "Run",
-    "Application.ShadedSphereMatrixGenerator.executor": "Run",
-    "Application.SphereMatrixViewer (1).executor": "Run",
-    "Application.SphereMatrixViewer.executor": "Run",
-    "Application.TestCanny.executor": "Run",
-    "Application.TestCircleThickAllFilters.executor": "Run",
-    "Application.TestCircleThickGauss.executor": "Run",
-    "Application.TestCircleThickGaussCLAHE.executor": "Run",
-    "Application.TestCircleThickNoFilter.executor": "Run",
-    "Application.TestCircleThinGauss.executor": "Run",
-    "Application.TestCircleThinGaussCLAHE.executor": "Run",
-    "Application.TestSphereAllFilters.executor": "Run",
-    "Application.TesteCannyGUI.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "vcs.Subversion.Presentation",
-    "two.files.diff.last.used.file": "W:/workspace/CircleTests/src/ParallelReinfLearningMod/ParallelModularCircleDetector.java",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.AdvancedModularCircleDetectorApp (1).executor&quot;: &quot;Run&quot;,
+    &quot;Application.AdvancedModularCircleDetectorApp.executor&quot;: &quot;Run&quot;,
+    &quot;Application.CircleDetectorApp.executor&quot;: &quot;Run&quot;,
+    &quot;Application.CircleMatrixApp.executor&quot;: &quot;Run&quot;,
+    &quot;Application.ImageCorrectorApp.executor&quot;: &quot;Run&quot;,
+    &quot;Application.ImageCorrectorSlider.executor&quot;: &quot;Run&quot;,
+    &quot;Application.ParallelModularCircleDetector.executor&quot;: &quot;Run&quot;,
+    &quot;Application.RegionCombiner.executor&quot;: &quot;Run&quot;,
+    &quot;Application.ShadedSphere (1).executor&quot;: &quot;Run&quot;,
+    &quot;Application.ShadedSphere.executor&quot;: &quot;Run&quot;,
+    &quot;Application.ShadedSphereMatrixApp.executor&quot;: &quot;Run&quot;,
+    &quot;Application.ShadedSphereMatrixGenerator.executor&quot;: &quot;Run&quot;,
+    &quot;Application.SphereMatrixViewer (1).executor&quot;: &quot;Run&quot;,
+    &quot;Application.SphereMatrixViewer.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestCanny.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestCircleThickAllFilters.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestCircleThickGauss.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestCircleThickGaussCLAHE.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestCircleThickNoFilter.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestCircleThinGauss.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestCircleThinGaussCLAHE.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestSphereAllFilters.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TesteCannyGUI.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;W:/workspaceIJ/CircleTests/src/filters/implementations&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;vcs.Subversion.Presentation&quot;,
+    &quot;two.files.diff.last.used.file&quot;: &quot;W:/workspace/CircleTests/src/ParallelReinfLearningMod/ParallelModularCircleDetector.java&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="W:\workspaceIJ\CircleTests\src\filters\implementations" />
+    </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="filters.strategies" />
     </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="filters" />
+      <recent name="tstDataCircles" />
+    </key>
   </component>
   <component name="RunManager" selected="Application.ParallelModularCircleDetector">
-    <configuration name="ParallelModularCircleDetector" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="ParallelReinfLearningMod.ParallelModularCircleDetector" />
+    <configuration name="AdvancedModularCircleDetectorApp" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="CirclesGenerators.AdvancedModularCircleDetectorApp" />
       <module name="Circle-Tests" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="ParallelReinfLearningMod.*" />
+          <option name="PATTERN" value="CirclesGenerators.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -121,12 +121,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="TestCircleThickGauss" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="Utilities.test.TestCircleThickGauss" />
+    <configuration name="ParallelModularCircleDetector" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="ParallelReinfLearningMod.ParallelModularCircleDetector" />
       <module name="Circle-Tests" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="Utilities.test.*" />
+          <option name="PATTERN" value="ParallelReinfLearningMod.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -176,10 +176,10 @@
     <recent_temporary>
       <list>
         <item itemvalue="Application.ParallelModularCircleDetector" />
+        <item itemvalue="Application.AdvancedModularCircleDetectorApp" />
         <item itemvalue="Application.TestSphereAllFilters" />
         <item itemvalue="Application.TestCircleThickNoFilter" />
         <item itemvalue="Application.TestCircleThickGaussCLAHE" />
-        <item itemvalue="Application.TestCircleThickGauss" />
       </list>
     </recent_temporary>
   </component>
@@ -281,18 +281,72 @@
       <option name="project" value="LOCAL" />
       <updated>1786999772172</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Added the 2 Adaptive Threshold strategies as differente filters.&#10;Added a combinatorial/permutation/sequential filter strategy to, based on the filter list, make permutations or combinations to seek for the best filter order.&#10;Modified ParallelModularCircleDetector.java in order to adapt to new changes  &#10;Started the code translation to Englishm started wit ParallelModularCircleDetector.java">
+      <option name="closed" value="true" />
+      <created>1787598785578</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1787598785578</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Splitted Adaptive Threshold with more two strategies (THRESH_BINARY_INV and THRESH_BINARY) for each filter.&#10;Added a new Dataset for test (Data2).&#10;Implemented a Java version of Hough detection that can be switched with a flag at ParallelModularCircleDetector.java &#10;Modified IncrementalPermutationStrategy to start with a pure circle detection at start without any filter&#10;Implemented the 2 strategies of Hough detection as a flag (HOUGH_GRADIENT_ALT or HOUGH_GRADIENT) that deals automatically with the parameters limits of each flag.&#10;Added debug to ResultVisualizerCompare.java.&#10;Added DSC00582.png to be tested with Data2.java&#10;Added some english translation">
+      <option name="closed" value="true" />
+      <created>1788467986062</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1788467986062</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Splitted Adaptive Threshold with more two strategies (THRESH_BINARY_INV and THRESH_BINARY) for each filter.&#10;Added a new Dataset for test (Data2).&#10;Implemented a Java version of Hough detection that can be switched with a flag at ParallelModularCircleDetector.java &#10;Modified IncrementalPermutationStrategy to start with a pure circle detection at start without any filter&#10;Implemented the 2 strategies of Hough detection as a flag (HOUGH_GRADIENT_ALT or HOUGH_GRADIENT) that deals automatically with the parameters limits of each flag.&#10;Added debug to ResultVisualizerCompare.java.&#10;Added DSC00582.png to be tested with Data2.java&#10;Added some english translation">
+      <option name="closed" value="true" />
+      <created>1788468008186</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1788468008186</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
+    <option name="OPEN_GENERIC_TABS">
+      <map>
+        <entry key="d4fe5b2d-1e9f-4e8a-bb1a-16d2ff284761" value="TOOL_WINDOW" />
+      </map>
+    </option>
     <option name="TAB_STATES">
       <map>
         <entry key="MAIN">
           <value>
             <State />
+          </value>
+        </entry>
+        <entry key="d4fe5b2d-1e9f-4e8a-bb1a-16d2ff284761">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="HEAD" />
+                      </list>
+                    </value>
+                  </entry>
+                  <entry key="roots">
+                    <value>
+                      <list>
+                        <option value="$PROJECT_DIR$" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+              <option name="SHOW_ONLY_AFFECTED_CHANGES" value="true" />
+            </State>
           </value>
         </entry>
       </map>
@@ -308,7 +362,9 @@
     <MESSAGE value="fixed bug in the multi thread environment that made the algoritm explore repeated states.&#10;Added ShadedSphere class and analogous classes to generate a matrix os spheres and explore more complex images" />
     <MESSAGE value="Added region combiner to make resumed versions of the output images." />
     <MESSAGE value="Added some missing files" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added some missing files" />
+    <MESSAGE value="Added the 2 Adaptive Threshold strategies as differente filters.&#10;Added a combinatorial/permutation/sequential filter strategy to, based on the filter list, make permutations or combinations to seek for the best filter order.&#10;Modified ParallelModularCircleDetector.java in order to adapt to new changes  &#10;Started the code translation to Englishm started wit ParallelModularCircleDetector.java" />
+    <MESSAGE value="Splitted Adaptive Threshold with more two strategies (THRESH_BINARY_INV and THRESH_BINARY) for each filter.&#10;Added a new Dataset for test (Data2).&#10;Implemented a Java version of Hough detection that can be switched with a flag at ParallelModularCircleDetector.java &#10;Modified IncrementalPermutationStrategy to start with a pure circle detection at start without any filter&#10;Implemented the 2 strategies of Hough detection as a flag (HOUGH_GRADIENT_ALT or HOUGH_GRADIENT) that deals automatically with the parameters limits of each flag.&#10;Added debug to ResultVisualizerCompare.java.&#10;Added DSC00582.png to be tested with Data2.java&#10;Added some english translation" />
+    <option name="LAST_COMMIT_MESSAGE" value="Splitted Adaptive Threshold with more two strategies (THRESH_BINARY_INV and THRESH_BINARY) for each filter.&#10;Added a new Dataset for test (Data2).&#10;Implemented a Java version of Hough detection that can be switched with a flag at ParallelModularCircleDetector.java &#10;Modified IncrementalPermutationStrategy to start with a pure circle detection at start without any filter&#10;Implemented the 2 strategies of Hough detection as a flag (HOUGH_GRADIENT_ALT or HOUGH_GRADIENT) that deals automatically with the parameters limits of each flag.&#10;Added debug to ResultVisualizerCompare.java.&#10;Added DSC00582.png to be tested with Data2.java&#10;Added some english translation" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
