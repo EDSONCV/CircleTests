@@ -18,29 +18,29 @@ public class ParallelOptimizer {
     private boolean logResults = false;
     private String logFileName = "Historico_Exploracao_RL.csv";
     private List<String> explorationHistory; // <--- NOVA VARIÁVEL
-    //  (Lista Tabu) ---
+    //  (Tabu List) ---
     private java.util.Set<String> visitedStates = java.util.concurrent.ConcurrentHashMap.newKeySet();
     
-    // Estado atual (Melhores parâmetros conhecidos)
+    // Instant State (Best known parameters)
     private List<OptParam> currentBestParams;
 
 
     public ParallelOptimizer(int threadCount, ModularEnvironment env, List<OptParam> initialParams) {
         this.threadCount = threadCount;
         this.env = env;
-        this.currentBestParams = deepCopyParams(initialParams); // Cópia de segurança
+        this.currentBestParams = deepCopyParams(initialParams); // security copy
         this.monitor = new PerformanceMonitor();
-        
-        // Cria pool de threads configurável
+
+        // Creates a configurable thread pool
         this.executor = Executors.newFixedThreadPool(threadCount);
         this.agent = new DynamicRLAgent(currentBestParams);
         this.explorationHistory = new ArrayList<>();
-        // Define o cabeçalho do arquivo CSV
-        this.explorationHistory.add("Batch,Thread,Tempo_ms,Reward,Circulos,mIoU,mDist_px,mHibrida,Parametros");
+        // Defines the header of the CSV file
+        this.explorationHistory.add("Batch,Thread,Time_ms,Reward,Circle,mIoU,mDist_px,mHybrid,Parameters");
     }
 
     public List<OptParam> runOptimization(int totalEpisodes) {
-        System.out.println("Iniciando Otimização Paralela...");
+        System.out.println("Starting parallel optimization...");
         //int batchSize = threadCount * 2;
         // we use 1:1 thread relation, but can be used a 1:2 to promoted efficiency
         int batchSize = threadCount ;
@@ -51,30 +51,30 @@ public class ParallelOptimizer {
         double globalBestDist = 0.0;
         double globalBestHybrid = 0.0;
 
-        // [PASSO DO ELITISMO]: Criação do "Cofre"
-        // Inicializa o cofre com os parâmetros padrão para não começar vazio
+        // "safe" building
+        // Initializes the safe with default parameters so it doesn't start empty.
         List<OptParam> absoluteBestParams = deepCopyParams(this.currentBestParams);
 
         for (int i = 0; i < totalEpisodes; i++) {
             List<Callable<SimulationResult>> tasks = new ArrayList<>();
 
-            // Dentro do for loop que cria as tasks no ParallelOptimizer:
+            // Inside the for loop that creates the tasks in ParallelOptimizer:
             for (int k = 0; k < batchSize; k++) {
                 List<OptParam> candidateParams = null;
                 boolean isNovel = false;
                 int attempts = 0;
 
-                // Tenta encontrar uma configuração INÉDITA (até 50 tentativas)
+                // Attempts to find a UNIQUE configuration (up to 50 attempts)
                 while (!isNovel && attempts < 50) {
                     candidateParams = deepCopyParams(this.currentBestParams);
 
                     if (attempts == 0) {
-                        // Na 1ª tentativa, deixa o Agente RL escolher o vizinho imediato
+                        // On the first attempt, let the RL Agent choose the immediate neighbor.
                         String action = agent.chooseActionForSim(k);
                         applyActionToParams(candidateParams, action);
                     } else {
-                        // Se já deu repetido, força MUTAÇÕES MÚLTIPLAS para fugir do congestionamento!
-                        // Quanto mais falha, mais parâmetros ele altera ao mesmo tempo (Tabu Search)
+                        // If it's already a repeated error, force MULTIPLE MUTATIONS to escape congestion!
+                        // The more it fails, the more parameters it changes at the same time (Tabu Search)
                         int numMutations = (attempts / 5) + 1;
                         for (int m = 0; m < numMutations; m++) {
                             int randomParamIndex = (int) (Math.random() * candidateParams.size());
@@ -84,65 +84,65 @@ public class ParallelOptimizer {
                         }
                     }
 
-                    // Gera a "Assinatura" desta configuração
+                   // Generates the "Signature" for this configuration.
                     String paramsKey = candidateParams.stream()
                             .map(OptParam::toString)
                             .collect(Collectors.joining("; "));
 
-                    // Se esta assinatura NUNCA foi vista em toda a história do treino:
+                    // If this signature has NEVER been seen in the entire history of training:
                     if (!visitedStates.contains(paramsKey)) {
                         isNovel = true;
-                        visitedStates.add(paramsKey); // Anota no caderno para ninguém mais repetir
+                        visitedStates.add(paramsKey); //Write this down in your notebook so that no one else repeats it.
                     }
 
                     attempts++;
                 }
 
-                // --- CORREÇÃO DA CONDIÇÃO DE CORRIDA (THREAD-SAFE) ---
-                // Instanciamos um ambiente 'clone' limpo e exclusivo para este Worker.
+                // --- CORRECTION OF THE RACE CONDITION (THREAD-SAFE) ---
+                // We instantiated a clean and exclusive 'clone' environment for this Worker.
                 ModularEnvironment localEnv = new ModularEnvironment(
                         this.env.getOriginalImage(),
                         this.env.getGroundTruth(),
-                        this.env.getPipelineFactory(), // <--- USE A FÁBRICA AQUI
+                        this.env.getPipelineFactory(), // <--- USE the factory here
                         this.env.getRewardConfig()
                 );
 
-                // Passamos o 'localEnv' em vez do 'env' global
+                //We passed 'localEnv' instead of 'env' global.
                 tasks.add(new SimulationTask(localEnv, candidateParams, "Worker-" + (k % threadCount)));
             }
 
             try {
-                // Executa as threads
+                // Execute the threads
                 List<Future<SimulationResult>> futures = executor.invokeAll(tasks);
                 SimulationResult bestOfBatch = null;
 
                 if (verboseMode) {
-                    System.out.println("   --- Detalhes das Threads (Batch " + i + ") ---");
+                    System.out.println("   --- Thread details  (Batch " + i + ") ---");
                 }
 
                 for (Future<SimulationResult> future : futures) {
                     SimulationResult result = future.get();
 
-                    // 1. Cálculos de métricas da Thread
+                   // 1. Thread Metrics Calculations
                     double timeMs = result.executionTimeNano / 1_000_000.0;
                     double threadIoU = env.calculateMeanIoU(result.detectedCircles);
-                    int circulosEncontrados = result.detectedCircles.size(); // <-- Captura os círculos
+                    int circulosEncontrados = result.detectedCircles.size(); // <-- Capture the circles
 
-                    // --- NOVOS CÁLCULOS DE MÉTRICAS ---
+                   // --- NEW METRIC CALCULATIONS ---
 
                     double[] hybridMetrics = env.calculateHybridMetricsForLog(result.detectedCircles);
                     double meanDist = hybridMetrics[0];
                     double meanHybrid = hybridMetrics[1];
 
-                    // Usamos ponto e vírgula (;) para separar os parâmetros,
-                    // garantindo que não quebre as colunas do arquivo CSV!
+                   /* We use semicolons (;) to separate the parameters,
+                    ensuring that the columns in the CSV file don't break!*/
                     String threadParams = result.usedParams.stream()
                             .map(OptParam::toString)
                             .collect(java.util.stream.Collectors.joining("; "));
 
-                    // 2. SALVA NO LOG DO CSV (Ocorre sempre, no background)
-                    // Usamos Locale.US para garantir que decimais usem ponto (ex: 0.95) em vez de vírgula
-                    // Salva no log incluindo os Círculos
+                    // 2. SAVES TO CSV LOG (Always happens in the background)
+                    /* We use Locale.US to ensure that decimals use a period (e.g., 0.95) instead of a comma
+                    / Saves to the log including the circles*/
                     if(logResults) {
                         String logLine = String.format(java.util.Locale.US, "%d,%s,%.2f,%.2f,%d,%.4f,%.2f,%.4f,%s",
                                 i, result.workerName, timeMs, result.reward, circulosEncontrados, threadIoU, meanDist, meanHybrid, threadParams);
@@ -150,11 +150,11 @@ public class ParallelOptimizer {
 
                         explorationHistory.add(logLine);
                     }
-                    // --- IMPRESSÃO DETALHADA POR THREAD (Se a flag estiver ativa) ---
+                    // --- Detailed printing by thread (if the flag is enabled) ---
                     if (verboseMode) {
 
-                        // Imprime: [Worker-X] Tempo | Reward | mIoU | Params
-                        System.out.printf("   [ %-8s ] Tempo: %5.1f ms | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | mDist: %5.1f px | mHíbrida: %.4f | Params: %s%n",
+                        // Prints: [Worker-X] Time | Rewards | mIoU | Params
+                        System.out.printf("   [ %-8s ] Time: %5.1f ms | Reward: %8.1f | Circles: %3d | mIoU: %.4f | mDist: %5.1f px | mHybrid: %.4f | Params: %s%n",
                                 result.workerName, timeMs, result.reward, circulosEncontrados, threadIoU, meanDist, meanHybrid, threadParams);
                     }
 
@@ -165,34 +165,34 @@ public class ParallelOptimizer {
                 if (verboseMode) {
                     System.out.println("   ------------------------------------------");
                 }
-                // Avalia os resultados da Batch
+               // Evaluates the results of the Batch
                 if (bestOfBatch != null) {
                     double currentMeanIoU = env.calculateMeanIoU(bestOfBatch.detectedCircles);
                     double[] bestMetrics = env.calculateHybridMetricsForLog(bestOfBatch.detectedCircles);
                     double currentMeanDist = bestMetrics[0];
                     double currentMeanHybrid = bestMetrics[1];
 
-                    //System.out.printf("Batch %3d | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | Thread: %s%n",
+                    //System.out.printf("Batch %3d | Reward: %8.1f | Circles: %3d | mIoU: %.4f | Thread: %s%n",
                     //        i, bestOfBatch.reward, bestOfBatch.detectedCircles.size(), currentMeanIoU, bestOfBatch.workerName);
 
-                    // --- 1. RECUPERA A FORMATAÇÃO DOS PARÂMETROS ---
+                    // --- 1. Recovers the formatting of the parameters ---
                     String formattedParams = bestOfBatch.usedParams.stream()
                             .map(OptParam::toString)
                             .collect(java.util.stream.Collectors.joining(", "));
 
-                    // --- IMPRESSÃO DO VENCEDOR DO BATCH (ATUALIZADA) ---
-                    System.out.printf("Batch %3d | Reward: %8.1f | Círculos: %3d | mIoU: %.4f | mDist: %5.1f px | mHíbrida: %.4f | Thread: %s%n",
+                    // --- BATCH WINNER'S PRINT (UPDATED) ---
+                    System.out.printf("Batch %3d | Reward: %8.1f | Circles: %3d | mIoU: %.4f | mDist: %5.1f px | mHybrid: %.4f | Thread: %s%n",
                             i, bestOfBatch.reward, bestOfBatch.detectedCircles.size(), currentMeanIoU, currentMeanDist, currentMeanHybrid, bestOfBatch.workerName);
 
                     System.out.println("   >> Params: " + formattedParams);
 
-                    // --- VERIFICAÇÃO DE RECORDE GLOBAL ---
+                    // --- GLOBAL RECORD VERIFICATION ---
                     if (bestOfBatch.reward > globalBestReward) {
                         globalBestReward = bestOfBatch.reward;
                         globalBestCircles = bestOfBatch.detectedCircles.size();
                         globalBestIoU = currentMeanIoU;
-                        globalBestDist = currentMeanDist;     // <-- SALVA O RECORDE DE DISTÂNCIA
-                        globalBestHybrid = currentMeanHybrid; // <-- SALVA O RECORDE HÍBRIDO
+                        globalBestDist = currentMeanDist;     // <-- SAVE THE DISTANCE RECORD
+                        globalBestHybrid = currentMeanHybrid; // <-- SAVE THE HYBRID RECORD
 
                         this.currentBestParams = deepCopyParams(bestOfBatch.usedParams);
                         absoluteBestParams = deepCopyParams(bestOfBatch.usedParams);
@@ -200,29 +200,29 @@ public class ParallelOptimizer {
                     } else {
                         episodesWithoutImprovement++;
                     }
-                    // --- [PASSO DO SALTO EXPLORATÓRIO] ---
+                    // --- [EXPLORATORY JUMP STEP] ---
                     int patienceLimit = env.getRewardConfig().getPatienceLimit();
 
-                    // Aciona o pulo quando a estagnação chegar na metade do limite de paciência
+                    // Trigger the jump when the stagnation reaches half of the patience limit.
                     if (episodesWithoutImprovement == (patienceLimit / 2)) {
-                        System.out.println("\n⚠️ ESTAGNAÇÃO DETECTADA! Iniciando Salto Exploratório Radical...");
+                        System.out.println("\n⚠️STAGNATION DETECTED! Initiating Radical Exploratory Leap...");
 
-                        // Diz para o agente RL voltar a ser aleatório (se tiver implementado)
+                        // Tell the RL agent to revert to randomness (if implemented).
                         agent.triggerExplorationBurst();
 
-                        // Embaralha o explorador, mas o 'absoluteBestParams' continua salvo!
+                        // It confuses the explorer, but 'absoluteBestParams' remains safe!
                         scrambleParameters(this.currentBestParams);
                     }
 
-                    // --- CRITÉRIO DE PARADA 1: OBJETIVO ALCANÇADO ---
+                    // ---STOPPING CRITERION 1: OBJECTIVE ACHIEVED ---
                     if (env.isGoalReached(bestOfBatch.detectedCircles)) {
-                        System.out.println("\n✅ CRITÉRIO DE PARADA ATINGIDO (mIoU Excelente)!");
+                        System.out.println("\n✅ STOPPING CRITERION REACHED (mIoU Excellent)!");
                         break;
                     }
 
-                    // --- CRITÉRIO DE PARADA 2: DESISTÊNCIA (PLATEAU) ---
+                    // --- STOP CRITERION 2: WITHDRAWAL (PLATEAU) ---
                     if (episodesWithoutImprovement >= patienceLimit) {
-                        System.out.println("\n🛑 PARADA DEFINITIVA POR ESTAGNAÇÃO.");
+                        System.out.println("\n🛑 DEFINITIVE STOP DUE TO STAGNATION.");
                         break;
                     }
                 }
@@ -233,48 +233,46 @@ public class ParallelOptimizer {
 
         executor.shutdown();
 
-        // --- GERA O ARQUIVO CSV COM TODA A HISTÓRIA DO TREINAMENTO ---
+        // --- GENERATES THE CSV FILE WITH THE ENTIRE TRAINING HISTORY ---
         if(logResults)
             exportLogToCSV();
 
-        // [PASSO DO ELITISMO]: Retorna a variável do Cofre, nunca o Explorador!
+        // [STEP OF ELITISM]: Returns the Vault variable, never the Explorer!
 
-// --- RESUMO FINAL DA OTIMIZAÇÃO (ATUALIZADO) ---
+// --- FINAL SUMMARY OF OPTIMIZATION (UPDATED) ---
         String finalParamsStr = absoluteBestParams.stream()
                 .map(OptParam::toString)
                 .collect(java.util.stream.Collectors.joining(", "));
 
         System.out.println("\n=======================================================================");
-        System.out.println("🏆 RESULTADO FINAL DA OTIMIZAÇÃO 🏆");
-        System.out.printf("Reward: %.1f | Círculos: %d | mIoU: %.4f | mDist: %.1f px | mHíbrida: %.4f%n",
+        System.out.println("🏆 FINAL RESULT OF THE OPTIMIZATION 🏆");
+        System.out.printf("Reward: %.1f | Circles: %d | mIoU: %.4f | mDist: %.1f px | mHybrid: %.4f%n",
                 globalBestReward, globalBestCircles, globalBestIoU, globalBestDist, globalBestHybrid);
-        System.out.println("Melhores Parâmetros: " + finalParamsStr);
+        System.out.println("Best Parameters: " + finalParamsStr);
         System.out.println("=======================================================================\n");
 
 
         return absoluteBestParams;
     }
 
-    /**
-     * Aplica uma mutação aleatória forte nos parâmetros atuais para tirá-los do buraco.
-     */
-    /**
-     * Aplica uma mutação aleatória forte nos parâmetros atuais para tirá-los do buraco (Local Optima).
-     * Respeita rigorosamente o 'Step' (pulo) do parâmetro para não gerar números inválidos.
-     */
+/**
+ * Applies a strong random mutation to the current parameters to get them out of the hole.
+ * Applies a strong random mutation to the current parameters to get them out of the hole (Local Optima).
+* Strictly respects the parameter's 'Step' to avoid generating invalid numbers.
+ */
     private void scrambleParameters(List<OptParam> params) {
         for (OptParam p : params) {
-            // 30% de chance de aplicar a mutação radical neste parâmetro específico
+            //There is a 30% chance of applying the radical mutation to this specific parameter.
             if (Math.random() < 0.3) {
 
-                // Calcula quantos "degraus" (steps) existem entre o Mínimo e o Máximo
+                // Calculates how many "steps" there are between the Minimum and the Maximum.
                 double range = p.getMax() - p.getMin();
                 int possibleSteps = (int) (range / p.getStep());
 
-                // Sorteia um número aleatório de degraus
+                // Selects a random number of steps
                 int randomSteps = (int) (Math.random() * (possibleSteps + 1));
 
-                // O novo valor será o Mínimo + (degraus sorteados * tamanho do degrau)
+                //The new value will be the Minimum + (number of steps drawn * step size)
                 double newValue = p.getMin() + (randomSteps * p.getStep());
 
                 p.setValue(newValue);
@@ -283,7 +281,7 @@ public class ParallelOptimizer {
     }
 
     /**
-     * Exporta todo o histórico de exploração das threads para um arquivo CSV.
+     * Exports the entire thread exploration history to a CSV file.
      */
     private void exportLogToCSV() {
 
@@ -291,23 +289,23 @@ public class ParallelOptimizer {
             for (String line : explorationHistory) {
                 writer.println(line);
             }
-            System.out.println("\n📊 [EXPORTAÇÃO] Log completo salvo com sucesso em: " + logFileName);
+            System.out.println("\n📊 [EXPORT] Log successful saved on: " + logFileName);
         } catch (Exception e) {
-            System.err.println("Erro ao salvar log de exploração: " + e.getMessage());
+            System.err.println("Error while saving exploration log: " + e.getMessage());
         }
     }
     
     /**
-     * Cria uma cópia profunda (Deep Copy) da lista de parâmetros.
-     * Isso é CRÍTICO para multithread: cada thread precisa de seus próprios objetos
-     * para não interferir na thread vizinha.
+     * Creates a deep copy of the parameter list.
+     * This is CRITICAL for multithreading: each thread needs its own objects
+     * so as not to interfere with neighboring threads.
      */
     private List<OptParam> deepCopyParams(List<OptParam> src) {
         List<OptParam> copy = new ArrayList<>();
         for (OptParam p : src) {
-            // Cria um novo objeto OptParam com os MESMOS valores do original
-            // Assumindo o construtor: OptParam(name, value, min, max, step, isInteger)
-            // Nota: Você pode precisar adicionar getters na classe OptParam se não tiverem
+            // Creates a new OptParam object with the SAME values as the original
+            // Assuming the constructor: OptParam(name, value, min, max, step, isInteger)
+
             OptParam newP = new OptParam(
                 p.getName(),
                 p.getValue(),
@@ -322,8 +320,8 @@ public class ParallelOptimizer {
     }
 
     /**
-     * Aplica a ação (string) na lista de parâmetros fornecida.
-     * Formato da ação: "INDEX_DIRECAO" (ex: "2_UP", "0_DOWN")
+     * Applies the action (string) to the provided parameter list.
+     * Action format: "INDEX_DIRECTION" (e.g., "2_UP", "0_DOWN")
      */
     private void applyActionToParams(List<OptParam> params, String action) {
         try {
@@ -331,7 +329,7 @@ public class ParallelOptimizer {
             int idx = Integer.parseInt(parts[0]);
             String dir = parts[1];
 
-            // Proteção de índice
+            // Intex protection
             if (idx >= 0 && idx < params.size()) {
                 OptParam target = params.get(idx);
                 if (dir.equals("UP")) {
@@ -341,7 +339,7 @@ public class ParallelOptimizer {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Erro ao aplicar ação paralela: " + action);
+            System.err.println("Error applying parallel action.: " + action);
         }
     }
 

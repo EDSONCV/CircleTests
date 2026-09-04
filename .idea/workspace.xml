@@ -4,30 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b48585ba-b6f6-43ff-811c-78cf578d762a" name="Changes" comment="Added DSC00582.png to be tested with Data2.java">
+    <list default="true" id="b48585ba-b6f6-43ff-811c-78cf578d762a" name="Changes" comment="Added translation to some files">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/Circle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/Circle.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/DynamicRLAgent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/DynamicRLAgent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ModularEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ModularEnvironment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/AdaptiveThreshGaussCFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/AdaptiveThreshGaussCFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/AdaptiveThreshGaussCFilterInverse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/AdaptiveThreshGaussCFilterInverse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/AdaptiveThreshMeanCFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/AdaptiveThreshMeanCFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/AdaptiveThreshMeanCFilterInverse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/AdaptiveThreshMeanCFilterInverse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/BilateralFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/BilateralFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/BrightnessContrastFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/BrightnessContrastFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/CLAHEFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/CLAHEFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/CannyFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/CannyFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/FilterParam.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/FilterParam.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/GaussianBlurFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/GaussianBlurFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/ImageFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/ImageFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/MorphClosingFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/MorphClosingFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/OptParam.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/OptParam.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/StepResult.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/StepResult.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/implementations/HoughCirclesJavaAlt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/implementations/HoughCirclesJavaAlt.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/implementations/HoughCirclesJavaOpt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/implementations/HoughCirclesJavaOpt.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/strategies/CombinatoricsHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/strategies/CombinatoricsHelper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/strategies/FullPermutationStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/strategies/FullPermutationStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/filters/strategies/SingleOrderStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/filters/strategies/SingleOrderStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ParallelOptimizer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ParallelOptimizer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/PerformanceMonitor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/PerformanceMonitor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ProcessingPipeline.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ProcessingPipeline.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ResultVisualizerCompare.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/ResultVisualizerCompare.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/RewardConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/RewardConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/SimulationClass.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/SimulationClass.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ParallelReinfLearningMod/StepResult.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ParallelReinfLearningMod/StepResult.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -333,7 +318,15 @@
       <option name="project" value="LOCAL" />
       <updated>1788468320624</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Added translation to some files">
+      <option name="closed" value="true" />
+      <created>1788539979959</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1788539979959</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -393,7 +386,8 @@
     <MESSAGE value="Added the 2 Adaptive Threshold strategies as differente filters.&#10;Added a combinatorial/permutation/sequential filter strategy to, based on the filter list, make permutations or combinations to seek for the best filter order.&#10;Modified ParallelModularCircleDetector.java in order to adapt to new changes  &#10;Started the code translation to Englishm started wit ParallelModularCircleDetector.java" />
     <MESSAGE value="Splitted Adaptive Threshold with more two strategies (THRESH_BINARY_INV and THRESH_BINARY) for each filter.&#10;Added a new Dataset for test (Data2).&#10;Implemented a Java version of Hough detection that can be switched with a flag at ParallelModularCircleDetector.java &#10;Modified IncrementalPermutationStrategy to start with a pure circle detection at start without any filter&#10;Implemented the 2 strategies of Hough detection as a flag (HOUGH_GRADIENT_ALT or HOUGH_GRADIENT) that deals automatically with the parameters limits of each flag.&#10;Added debug to ResultVisualizerCompare.java.&#10;Added DSC00582.png to be tested with Data2.java&#10;Added some english translation" />
     <MESSAGE value="Added DSC00582.png to be tested with Data2.java" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added DSC00582.png to be tested with Data2.java" />
+    <MESSAGE value="Added translation to some files" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added translation to some files" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

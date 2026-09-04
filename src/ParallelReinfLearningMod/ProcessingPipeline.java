@@ -68,16 +68,16 @@ class ProcessingPipeline {
     }
 
     /**
-     * Retorna TODOS os parâmetros (Filtros + Hough) em uma lista plana.
-     * O Agente RL vai interagir com essa lista.
+     * Returns ALL parameters (Filters + Hough) in a flat list.
+     * The RL Agent will interact with this list.
      */
     public List<OptParam> getAllParameters() {
         List<OptParam> allParams = new ArrayList<>();
-        // Adiciona params dos filtros
+        // Add filters parameters
         for (ImageFilter filter : filters) {
             allParams.addAll(filter.getParams());
         }
-        // Adiciona params do Hough
+        // Add Hough  params
         allParams.add(houghDp);
         allParams.add(houghMinDist);
         allParams.add(houghP1);
@@ -89,81 +89,80 @@ class ProcessingPipeline {
     
     public List<StepResult> runPipelineWithDebug(Mat originalImage) {
         List<StepResult> steps = new ArrayList<>();
-        
-        // 1. Etapa Zero: Imagem Original
-        // Adicionamos um clone para garantir que não seja alterada depois
+
+        // Step Zero: Original Image
+        // We added a clone to ensure it won't be altered later
         steps.add(new StepResult(originalImage.clone(), "Original", "Input"));
 
         Mat currentImage = originalImage.clone();
-        
-        // Se a primeira etapa exigir grayscale e a imagem for colorida, converte
-        // (Isso pode ser considerado uma etapa implícita ou parte do setup)
+
+        // If the first step requires grayscale and the image is in color, convert it
+        // (This can be considered an implicit step or part of the setup)
         if (currentImage.channels() > 1) {
              Imgproc.cvtColor(currentImage, currentImage, Imgproc.COLOR_BGR2GRAY);
         }
 
-        // 2. Loop pelos Filtros
+        // 2. Loop among the Filters
         for (ImageFilter filter : filters) {
-            // Processa
+            // Processes
             Mat nextImage = filter.process(currentImage);
             
-            // Monta a string de parâmetros deste filtro específico
+            // Assemble the parameter string for this specific filter.
             StringBuilder paramStr = new StringBuilder();
             for (OptParam p : filter.getParams()) {
                 paramStr.append(p.toString()).append(" ");
             }
 
-            // Salva no histórico (Clonando para garantir persistência visual)
+            // Saved to history (Cloning to ensure visual persistence)
             steps.add(new StepResult(nextImage.clone(), filter.getName(), paramStr.toString()));
 
-            // Prepara próxima iteração
+            //Prepare for the next iteration.
             currentImage.release(); // Libera a anterior
             currentImage = nextImage;
         }
 
-        return steps; // Retorna lista: [Original, Filtro1, Filtro2, ..., ResultadoFinalPipeline]
+        return steps;
     }
- // Na classe ProcessingPipeline
 
     /**
-     * Cria uma cópia profunda (ou funcional) do pipeline e aplica os novos parâmetros.
-     * Essencial para Multithreading.
+     * Creates a deep (or functional) copy of the pipeline and applies the new parameters.
+     * Essential for multithreading.
      */
     public ProcessingPipeline cloneWithParams(List<OptParam> newParams) {
         // 1. Cria uma nova instância do pipeline (vazio)
         ProcessingPipeline clone = new ProcessingPipeline();
-        
-        // 2. Adiciona os mesmos filtros (novas instâncias)
+
+        // 2. Add the same filters (new instances)
         for (ImageFilter filter : this.filters) {
-            // Assumindo que seus filtros tenham um método ou construtor de cópia.
-            // Se não tiver, você precisa criar novas instâncias manualmente aqui.
-            // Exemplo genérico:
+            // Assuming your filters have a copy method or constructor.
+            // If not, you need to create new instances manually here.
+        // Generic example:
             if (filter instanceof GaussianBlurFilter) clone.addFilter(new GaussianBlurFilter());
             else if (filter instanceof BrightnessContrastFilter) clone.addFilter(new BrightnessContrastFilter());
-            // ... outros filtros ...
+            // ... other filters
         }
-        
-        // 3. Sincroniza os valores baseados na lista 'newParams' recebida.
-        // A lista 'newParams' contém nomes como "G_Kernel", "H_param1", etc.
-        // O 'clone' tem seus próprios OptParams internos com esses mesmos nomes.
+
+        // 3. Synchronizes the values ​​based on the received 'newParams' list.
+        // The 'newParams' list contains names like "G_Kernel", "H_param1", etc.
+        // The 'clone' has its own internal OptParams with these same names.
         clone.syncParameters(newParams);
         
         return clone;
     }
 
     /**
-     * Percorre os parâmetros internos deste pipeline e atualiza seus valores
-     * caso encontre um correspondente (pelo nome) na lista fornecida.
+     * Iterates through the internal parameters of this pipeline and updates their values
+     * if it finds a match (by name) in the provided list.
      */
     public void syncParameters(List<OptParam> sourceParams) {
-        // Lista de todos os params DESTE pipeline (Hough + Filtros)
+        // List of all parameters for THIS pipeline (Hough + Filters)
         List<OptParam> myParams = this.getAllParameters();
         
         for (OptParam myParam : myParams) {
-            // Procura na lista recebida se tem alguém com o mesmo nome
+            // Search the received list to see if there is anyone with the same name.
             for (OptParam sourceParam : sourceParams) {
                 if (myParam.getName().equals(sourceParam.getName())) {
-                    // Atualiza o valor (força o valor bruto)
+                    // Updates the value (forces the raw value)
                     myParam.setValue(sourceParam.getValue());
                     break;
                 }
@@ -185,21 +184,21 @@ class ProcessingPipeline {
     public int getMaxRadius() { return (int)houghMaxR.getValue(); }
 
     /**
-     * Defines the Houghs' strategy and adjust the P2 parameter acornding to Opencv documentation
+     * Defines the Houghs' strategy and adjusts the P2 parameter according to Opencv documentation
      * For HOUGH_GRADIENT_ALT P2 must be smaller than 1
      */
     public void setHoughMethod(int method) {
         this.houghMethod = method;
 
-        // Atualiza os limites do parâmetro 2 dinamicamente
+        // Updates the limits of parameter 2 dynamically
         if (this.houghMethod == Imgproc.HOUGH_GRADIENT) {
             // For HOUGH_GRADIENT, P2 is the accumulator threshold ( higher, circles more precise)
-            // Typical range between  10.0 a 100.0 (or more depending on the noise)
-            // Substitua 'param2Opt' pelo nome real da sua variável OptParam interna
+            // Typical range between 10.0 to 100.0 (or more depending on the noise)
+            // Replace 'param2Opt' with the actual name of your internal OptParam variable
             this.houghP2 = new OptParam("param2", 10.0, 150.0, 30.0, 1.0,false);
         } else {
             // for HOUGH_GRADIENT_ALT, P2 is the measure of "perfection" (values close to 1 = more perfect).
-            // Faixa típica: 0.5 a 1.0 (NUNCA maior que 1.0)
+            //Typical range: 0.5 to 1.0 (NEVER greater than 1.0)
             this.houghP2 = new OptParam("H_p2", 0.9, 0.1, 1, 0.1, false);
         }
     }

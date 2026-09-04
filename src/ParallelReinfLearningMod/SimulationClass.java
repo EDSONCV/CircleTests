@@ -1,3 +1,4 @@
+// SimulationClass.java
 package ParallelReinfLearningMod;
 
 import java.util.concurrent.Callable;
@@ -9,14 +10,14 @@ import filters.OptParam;
 import java.util.List;
 
 /**
- * O objeto que volta da Thread com os dados da simulação.
+ * The object that returns from the Thread with the simulation data.[cite: 2]
  */
 class SimulationResult {
     public double reward;
     public List<Circle> detectedCircles;
-    public List<OptParam> usedParams; // Parâmetros que geraram este resultado
-    public long executionTimeNano;    // Tempo levado
-    public String workerName;         // Quem executou
+    public List<OptParam> usedParams; // Parameters that generated this result[cite: 2]
+    public long executionTimeNano;    // Time taken[cite: 2]
+    public String workerName;         // Who executed it[cite: 2]
 
     public SimulationResult(double reward, List<Circle> circles, List<OptParam> params, long time, String worker) {
         this.reward = reward;
@@ -28,18 +29,18 @@ class SimulationResult {
 }
 
 /**
- * A tarefa que será executada em paralelo.
- * Implementa Callable para poder retornar valor.
+ * The task that will be executed in parallel.[cite: 2]
+ * Implements Callable to be able to return a value.[cite: 2]
  */
 class SimulationTask implements Callable<SimulationResult> {
-    private ModularEnvironment env; // O ambiente (thread-safe ou clonado)
+    private ModularEnvironment env; // The environment (thread-safe or cloned)[cite: 2]
     private List<OptParam> paramsToTest;
     private String workerId;
 
     public SimulationTask(ModularEnvironment baseEnv, List<OptParam> params, String workerId) {
-        // IMPORTANTE: O ambiente deve ser capaz de lidar com concorrência ou ser clonado.
-        // Aqui assumiremos que o env cria Mats novos a cada execução, o que é seguro.
-        this.env = baseEnv; 
+        // IMPORTANT: The environment must be able to handle concurrency or be cloned.[cite: 2]
+        // Here we will assume that env creates new Mats on each execution, which is safe.[cite: 2]
+        this.env = baseEnv;
         this.paramsToTest = params;
         this.workerId = workerId;
     }
@@ -48,19 +49,19 @@ class SimulationTask implements Callable<SimulationResult> {
     public SimulationResult call() throws Exception {
         long start = System.nanoTime();
 
-        // 1. Configura o pipeline com os parâmetros desta tarefa
-        // Nota: Precisamos garantir que isso não afete outras threads.
-        // A melhor forma é o Environment receber os params no método runDetection
-        // em vez de ler do estado interno do pipeline compartilhado.
-        
-        // Executa detecção passando os parametros explicitamente
+        // 1. Configures the pipeline with the parameters for this task[cite: 2]
+        // Note: We need to ensure that this does not affect other threads.[cite: 2]
+        // The best way is for the Environment to receive the params in the runDetection method[cite: 2]
+        // instead of reading from the internal state of the shared pipeline.[cite: 2]
+
+        // Executes detection passing the parameters explicitly[cite: 2]
         List<Circle> detected = env.runDetection(paramsToTest);
-        
-        // Calcula recompensa
+
+        // Calculates reward[cite: 2]
         double reward = env.calculateReward(detected);
 
         long duration = System.nanoTime() - start;
-        
+
         return new SimulationResult(reward, detected, paramsToTest, duration, workerId);
     }
 }

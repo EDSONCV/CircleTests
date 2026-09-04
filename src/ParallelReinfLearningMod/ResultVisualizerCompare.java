@@ -1,3 +1,4 @@
+// ResultVisualizerCompare.java
 package ParallelReinfLearningMod;
 
 import javax.swing.*;
@@ -18,32 +19,18 @@ import org.opencv.core.*;
 import org.opencv.core.Point;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-
-import javax.swing.*;
-import javax.swing.border.TitledBorder;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import org.opencv.core.*;
-import org.opencv.imgproc.Imgproc;
 import java.io.PrintWriter;
 
 public class ResultVisualizerCompare extends JFrame {
 
-    // Variáveis de instância para podermos acessá-las no momento de salvar
+    // Instance variables so we can access them at the time of saving[cite: 3]
     private List<StepResult> pipelineSteps;
     private Mat finalVisualization;
     private List<Circle> finalCircles;
     private String houghParams;
     private List<Circle> groundTruth;
     private static final DecimalFormat df = new DecimalFormat("#0.00");
-    // Lista para guardar as métricas de erro que vão para a tabela e ficheiro CSV
+    // List to store the error metrics that go to the table and CSV file[cite: 3]
     private List<Object[]> metricRows;
 
     public ResultVisualizerCompare(List<StepResult> pipelineSteps, List<Circle> finalCircles,
@@ -57,18 +44,18 @@ public class ResultVisualizerCompare extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // --- 1. PAINEL CENTRAL (IMAGENS) ---
+        // --- 1. CENTRAL PANEL (IMAGES) ---[cite: 3]
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Adiciona as etapas intermédias (Filtros)
+        // Adds the intermediate steps (Filters)[cite: 3]
         for (StepResult step : pipelineSteps) {
             mainPanel.add(createStepPanel(step.image, step.stepName, step.paramsDescription));
             mainPanel.add(Box.createRigidArea(new Dimension(10, 0)));
         }
 
-        // Imagem Final
+        // Final Image[cite: 3]
         Mat lastImage = pipelineSteps.get(pipelineSteps.size() - 1).image;
         finalVisualization = new Mat();
         if (lastImage.channels() == 1) {
@@ -85,14 +72,14 @@ public class ResultVisualizerCompare extends JFrame {
         imageScrollPane.getHorizontalScrollBar().setUnitIncrement(20);
         add(imageScrollPane, BorderLayout.CENTER);
 
-        // --- 2. CÁLCULO DE MÉTRICAS (Detetado vs Gabarito) ---
+        // --- 2. METRICS CALCULATION (Detected vs Ground Truth) ---[cite: 3]
         calculateMetrics();
 
-        // --- 3. PAINEL INFERIOR (TABELA + BOTÃO) ---
+        // --- 3. BOTTOM PANEL (TABLE + BUTTON) ---[cite: 3]
         JPanel bottomContainer = new JPanel(new BorderLayout());
         bottomContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Cabeçalhos da Tabela Analítica
+        // Analytical Table Headers[cite: 3]
         String[] columnNames = {
                 "ID",
                 "Det_X", "Det_Y", "Det_Raio",
@@ -104,7 +91,7 @@ public class ResultVisualizerCompare extends JFrame {
         DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
         JTable resultsTable = new JTable(tableModel);
 
-        // Preenche a tabela com os resultados calculados
+        // Fills the table with the calculated results[cite: 3]
         for (Object[] row : metricRows) {
             tableModel.addRow(row);
         }
@@ -112,7 +99,7 @@ public class ResultVisualizerCompare extends JFrame {
         JScrollPane tableScrollPane = new JScrollPane(resultsTable);
         tableScrollPane.setPreferredSize(new Dimension(getWidth(), 200));
 
-        // Painel do Botão
+        // Button Panel[cite: 3]
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnSave = new JButton("Salvar Imagens e Exportar CSV");
         btnSave.setFont(new Font("Arial", Font.BOLD, 14));
@@ -123,12 +110,13 @@ public class ResultVisualizerCompare extends JFrame {
         bottomContainer.add(buttonPanel, BorderLayout.SOUTH);
         add(bottomContainer, BorderLayout.SOUTH);
 
-        // Configurações da Janela
+        // Window Configurations[cite: 3]
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
     }
+
     private void saveImagesAction(ActionEvent e) {
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Selecione a pasta para salvar os resultados");
@@ -156,10 +144,10 @@ public class ResultVisualizerCompare extends JFrame {
     }
 
     /**
-     * Ação disparada ao clicar no botão "Salvar Imagens".
+     * Action triggered when clicking the "Save Images" button.[cite: 3]
      */
     /**
-     * Guarda as imagens e exporta a tabela analítica para CSV.
+     * Saves the images and exports the analytical table to CSV.[cite: 3]
      */
     private void saveDataAction(ActionEvent e) {
         JFileChooser chooser = new JFileChooser();
@@ -172,7 +160,7 @@ public class ResultVisualizerCompare extends JFrame {
             String basePath = selectedDirectory.getAbsolutePath() + File.separator;
 
             try {
-                // 1. Guarda Imagens Intermédias
+                // 1. Saves Intermediate Images[cite: 3]
                 for (int i = 0; i < pipelineSteps.size(); i++) {
                     StepResult step = pipelineSteps.get(i);
                     String safeName = step.stepName.replaceAll("[^a-zA-Z0-9.-]", "_");
@@ -180,18 +168,18 @@ public class ResultVisualizerCompare extends JFrame {
                     Imgcodecs.imwrite(fileName, step.image);
                 }
 
-                // 2. Guarda Imagem Final de Comparação
+                // 2. Saves Final Comparison Image[cite: 3]
                 String finalFileName = String.format("%s%02d_Resultado_Final.png", basePath, (pipelineSteps.size() + 1));
                 Imgcodecs.imwrite(finalFileName, finalVisualization);
 
-                // 3. Exporta a Tabela Analítica para o ficheiro CSV
+                // 3. Exports the Analytical Table to the CSV file[cite: 3]
                 String csvFileName = basePath + "Metricas_Erro_Circulos.csv";
                 try (PrintWriter writer = new PrintWriter(new File(csvFileName))) {
-                    // Cabeçalho do CSV
+                    // CSV Header[cite: 3]
                     writer.println("ID;Det_X;Det_Y;Det_Raio;Ref_X;Ref_Y;Ref_Raio;Erro_X;Erro_Y;Erro_Raio;Distancia_Euclidiana;IoU");
 
                     for (Object[] row : metricRows) {
-                        // Substitui a vírgula do formato europeu por ponto, e usa vírgula como delimitador
+                        // Replaces the European format comma with a dot, and uses a comma as a delimiter[cite: 3]
                         /*String line = String.format("%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s",
                                 row[0],
                                 row[1].toString().replace(",", "."), row[2].toString().replace(",", "."), row[3].toString().replace(",", "."),
@@ -221,56 +209,56 @@ public class ResultVisualizerCompare extends JFrame {
     }
 
     /**
-     * Gera a imagem final com as modificações visuais solicitadas:
-     * 1. Centro com ponto sólido.
-     * 2. Borda fina.
-     * 3. ID no canto inferior esquerdo.
+     * Generates the final image with the requested visual modifications:
+     * 1. Center with a solid dot.
+     * 2. Thin border.
+     * 3. ID in the lower left corner.[cite: 3]
      */
     private Mat prepareFinalImage(Mat source, List<CircleMatch> matches) {
         Mat canvas = new Mat();
-        // Garante que o canvas seja colorido (BGR) para desenharmos em vermelho/verde
+        // Ensures the canvas is colored (BGR) to draw in red/green[cite: 3]
         if (source.channels() == 1) Imgproc.cvtColor(source, canvas, Imgproc.COLOR_GRAY2BGR);
         else source.copyTo(canvas);
 
-        // A. Desenha Ground Truth (Verde) - Apenas borda para referência
+        // A. Draws Ground Truth (Green) - Border only for reference[cite: 3]
         for (CircleMatch m : matches) {
             if (m.gt != null) {
                 Imgproc.circle(canvas, new Point(m.gt.x, m.gt.y), (int)m.gt.r, new Scalar(0, 255, 0), 1);
             }
         }
 
-        // B. Desenha Detectados (Vermelho) com as novas regras
+        // B. Draws Detected (Red) with the new rules[cite: 3]
         for (CircleMatch m : matches) {
             if (m.det != null) {
                 Point center = new Point(m.det.x, m.det.y);
                 int radius = (int) m.det.r;
                 Scalar color = new Scalar(0, 0, 255); // Vermelho
 
-                // REQUISITO 1: Centro com ponto (não X)
-                // thickness = -1 significa preenchido (FILLED)
-                Imgproc.circle(canvas, center, 2, color, -1); 
+                // REQUIREMENT 1: Center with a dot (not X)[cite: 3]
+                // thickness = -1 means FILLED[cite: 3]
+                Imgproc.circle(canvas, center, 2, color, -1);
 
-                // REQUISITO 2: Traço fino
-                // thickness = 1
+                // REQUIREMENT 2: Thin stroke[cite: 3]
+                // thickness = 1[cite: 3]
                 Imgproc.circle(canvas, center, radius, color, 1);
 
-                // REQUISITO 3: ID do lado esquerdo inferior
-                // Calculamos a posição: X = (CentroX - Raio), Y = (CentroY + Raio + margem)
+                // REQUIREMENT 3: ID on the lower left side[cite: 3]
+                // We calculate the position: X = (CenterX - Radius), Y = (CenterY + Radius + margin)[cite: 3]
                 Point textPos = new Point(m.det.x - radius, m.det.y + radius + 15);
-                
+
                 String label = "ID:" + m.id;
-                
-                // Fonte pequena (0.4)
-                Imgproc.putText(canvas, label, textPos, 
+
+                // Small font (0.4)[cite: 3]
+                Imgproc.putText(canvas, label, textPos,
                         Imgproc.FONT_HERSHEY_SIMPLEX, 0.4, color, 1);
             }
         }
-        
-        // Legenda simples no topo
-        Imgproc.putText(canvas, "Verde: Gabarito | Vermelho: Detectado", new Point(10, 20), 
-                Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(255,255,255), 4); // Contorno branco
-        Imgproc.putText(canvas, "Verde: Gabarito | Vermelho: Detectado", new Point(10, 20), 
-                Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(0,0,0), 1);       // Texto preto
+
+        // Simple legend at the top[cite: 3]
+        Imgproc.putText(canvas, "Verde: Gabarito | Vermelho: Detectado", new Point(10, 20),
+                Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(255,255,255), 4); // White outline[cite: 3]
+        Imgproc.putText(canvas, "Verde: Gabarito | Vermelho: Detectado", new Point(10, 20),
+                Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(0,0,0), 1);       // Black text[cite: 3]
 
         return canvas;
     }
@@ -324,20 +312,21 @@ public class ResultVisualizerCompare extends JFrame {
         panel.add(paramsLabel, BorderLayout.SOUTH);
         return panel;
     }
+
     private List<CircleMatch> matchAndSortCircles(List<Circle> detected, List<Circle> truth) {
-        // (A lógica de matching permanece IDÊNTICA à resposta anterior)
-        // Vou omitir aqui para economizar espaço, mas deve ser copiada da resposta anterior
-        // Lembre-se: Ordena GT, parea por distância mínima, marca Ruídos.
-        
-        // --- COPIAR MÉTODO matchAndSortCircles DA RESPOSTA ANTERIOR ---
+        // (The matching logic remains IDENTICAL to the previous response)[cite: 3]
+        // I will omit it here to save space, but it should be copied from the previous response[cite: 3]
+        // Remember: Sorts GT, pairs by minimum distance, marks Noises.[cite: 3]
+
+        // --- COPY matchAndSortCircles METHOD FROM PREVIOUS RESPONSE ---[cite: 3]
         List<CircleMatch> results = new ArrayList<>();
         List<Circle> detCopy = new ArrayList<>(detected);
         List<Circle> gtCopy = new ArrayList<>(truth);
-        gtCopy.sort(Comparator.comparingDouble(c -> c.x)); // Ordena GT por X
+        gtCopy.sort(Comparator.comparingDouble(c -> c.x)); // Sorts GT by X[cite: 3]
 
         int idCounter = 1;
 
-        // 1. Matches de GT com Detectados
+        // 1. Matches of GT with Detected[cite: 3]
         for (Circle gt : gtCopy) {
             Circle bestMatch = null;
             double minDist = Double.MAX_VALUE;
@@ -366,7 +355,7 @@ public class ResultVisualizerCompare extends JFrame {
             results.add(match);
         }
 
-        // 2. Sobras (Falsos Positivos)
+        // 2. Leftovers (False Positives)[cite: 3]
         for (Circle noise : detCopy) {
             CircleMatch fp = new CircleMatch();
             fp.id = idCounter++;
@@ -375,7 +364,7 @@ public class ResultVisualizerCompare extends JFrame {
             results.add(fp);
         }
 
-        // 3. Ordenação Final
+        // 3. Final Sorting[cite: 3]
         results.sort((m1, m2) -> {
             double x1 = (m1.gt != null) ? m1.gt.x : m1.det.x;
             double x2 = (m2.gt != null) ? m2.gt.x : m2.det.x;
@@ -386,90 +375,57 @@ public class ResultVisualizerCompare extends JFrame {
     }
 
     /**
-     * Desenha o Ground Truth em Azul e os Detectados em Vermelho.
+     * Draws the Ground Truth in Blue and the Detected ones in Red.[cite: 3]
      */
     private void drawComparison(Mat img, List<Circle> detected, List<Circle> groundTruth) {
-        // 1. Desenha o Gabarito primeiro (Azul) - ficará por baixo
+        // 1. Draws the Ground Truth first (Blue) - will be underneath[cite: 3]
         for (Circle gt : groundTruth) {
             Point center = new Point(gt.x, gt.y);
-            // Desenha apenas o contorno, linha tracejada visual ou fina
-            Imgproc.circle(img, center, (int) gt.r, new Scalar(255, 0, 0), 2); // BGR: Azul
-           // System.out.println("gt inside ResultVisualizer " + "cx: " + gt.x +" cy: " + gt.y + " radius : " + gt.r );
+            // Draws only the outline, visual dashed or thin line[cite: 3]
+            Imgproc.circle(img, center, (int) gt.r, new Scalar(255, 0, 0), 2); // BGR: Blue[cite: 3]
+            // System.out.println("gt inside ResultVisualizer " + "cx: " + gt.x +" cy: " + gt.y + " radius : " + gt.r );
         }
 
-        // 2. Desenha os detectados pelo algoritmo por cima (Vermelho e Verde)
+        // 2. Draws those detected by the algorithm on top (Red and Green)[cite: 3]
         for (Circle c : detected) {
             Point center = new Point(c.x, c.y);
-            Imgproc.circle(img, center, 3, new Scalar(0, 255, 0), -1); // Centro Verde
-            Imgproc.circle(img, center, (int) c.r, new Scalar(0, 0, 255), 2); // Contorno Vermelho
+            Imgproc.circle(img, center, 3, new Scalar(0, 255, 0), -1); // Green Center[cite: 3]
+            Imgproc.circle(img, center, (int) c.r, new Scalar(0, 0, 255), 2); // Red Outline[cite: 3]
         }
     }
 
-    // Classe auxiliar CircleMatch (copie também a lógica de métricas da resposta anterior)
+    // Auxiliary class CircleMatch (also copy the metrics logic from the previous response)[cite: 3]
     private class CircleMatch {
         int id; String status; Circle gt; Circle det;
         double centerError, radiusErrorAbs, radiusErrorPct, iou;
         boolean isMatched() { return gt != null && det != null; }
         void calculateMetrics() {
-             if (!isMatched()) return;
-             this.centerError = Math.hypot(gt.x - det.x, gt.y - det.y);
-             this.radiusErrorAbs = Math.abs(gt.r - det.r);
-             if (gt.r > 0) this.radiusErrorPct = (this.radiusErrorAbs / gt.r) * 100.0;
-             double intersectionR = Math.min(gt.r, det.r) - (centerError / 2.0);
-             if (intersectionR < 0) intersectionR = 0;
-             double areaGt = Math.PI * gt.r * gt.r;
-             double areaDet = Math.PI * det.r * det.r;
-             double areaInter = Math.PI * intersectionR * intersectionR; 
-             this.iou = areaInter / (areaGt + areaDet - areaInter);
+            if (!isMatched()) return;
+            this.centerError = Math.hypot(gt.x - det.x, gt.y - det.y);
+            this.radiusErrorAbs = Math.abs(gt.r - det.r);
+            if (gt.r > 0) this.radiusErrorPct = (this.radiusErrorAbs / gt.r) * 100.0;
+            double intersectionR = Math.min(gt.r, det.r) - (centerError / 2.0);
+            if (intersectionR < 0) intersectionR = 0;
+            double areaGt = Math.PI * gt.r * gt.r;
+            double areaDet = Math.PI * det.r * det.r;
+            double areaInter = Math.PI * intersectionR * intersectionR;
+            this.iou = areaInter / (areaGt + areaDet - areaInter);
         }
     }
 
     /**
-     * Calcula o erro individual de cada círculo detetado mapeando-o
-     * para o círculo mais próximo no Ground Truth.
+     * Calculates the individual error of each detected circle by mapping it
+     * to the closest circle in the Ground Truth.[cite: 3]
      */
     private void calculateMetrics() {
         metricRows = new ArrayList<>();
-
-    /*
-        for (int i = 0; i < finalCircles.size(); i++) {
-            Circle det = finalCircles.get(i);
-            Circle bestMatch = null;
-            double minDistance = Double.MAX_VALUE;
-
-            // Encontra o círculo real mais próximo (menor distância euclidiana)
-            for (Circle gt : groundTruth) {
-                double dist = Math.sqrt(Math.pow(det.x - gt.x, 2) + Math.pow(det.y - gt.y, 2));
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    bestMatch = gt;
-                }
-            }
-
-            if (bestMatch != null) {
-                // Cálculo de erros absolutos
-                double errX = Math.abs(det.x - bestMatch.x);
-                double errY = Math.abs(det.y - bestMatch.y);
-                double errR = Math.abs(det.r - bestMatch.r);
-
-                // Formatação: ID, Dados Detetados, Dados Referência, Erros
-                metricRows.add(new Object[]{
-                        (i + 1),
-                        String.format("%.1f", det.x), String.format("%.1f", det.y), String.format("%.1f", det.r),
-                        String.format("%.1f", bestMatch.x), String.format("%.1f", bestMatch.y), String.format("%.1f", bestMatch.r),
-                        String.format("%.2f", errX), String.format("%.2f", errY), String.format("%.2f", errR),
-                        String.format("%.2f", minDistance)
-                });
-            }
-        }
-    */
         for (int i = 0; i < finalCircles.size(); i++) {
             Circle det = finalCircles.get(i);
             Circle bestMatch = null;
             double maxIou = 0.0;
             double distAtMaxIou = 0.0;
 
-            // Encontra o Ground Truth pelo MAIOR IoU
+            // Finds the Ground Truth by the HIGHEST IoU[cite: 3]
             for (Circle gt : groundTruth) {
                 double iou = det.getIoU(gt);
                 if (iou > maxIou) {
@@ -484,14 +440,14 @@ public class ResultVisualizerCompare extends JFrame {
                 double errY = Math.abs(det.y - bestMatch.y);
                 double errR = Math.abs(det.r - bestMatch.r);
 
-                // Adicionamos o IoU no final do array de métricas
+                // <--- NEW IoU COLUMN[cite: 3]
                 metricRows.add(new Object[]{
                         (i + 1),
                         String.format("%.1f", det.x), String.format("%.1f", det.y), String.format("%.1f", det.r),
                         String.format("%.1f", bestMatch.x), String.format("%.1f", bestMatch.y), String.format("%.1f", bestMatch.r),
                         String.format("%.2f", errX), String.format("%.2f", errY), String.format("%.2f", errR),
                         String.format("%.2f", distAtMaxIou),
-                        String.format("%.4f", maxIou) // <--- NOVA COLUNA IoU
+                        String.format("%.4f", maxIou)
                 });
             }
         }

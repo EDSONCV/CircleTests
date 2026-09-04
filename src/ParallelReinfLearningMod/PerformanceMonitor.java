@@ -5,9 +5,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 class PerformanceMonitor {
-    // Mapa: Nome da Thread -> Soma dos tempos de execução
+    // Map: Thread Name -> Sum of execution times
     private ConcurrentHashMap<String, AtomicLong> totalTimeMap = new ConcurrentHashMap<>();
-    // Mapa: Nome da Thread -> Quantidade de tarefas executadas
+    // Map: Thread Name -> Number of tasks executed
     private ConcurrentHashMap<String, Integer> taskCountMap = new ConcurrentHashMap<>();
 
     public void record(String workerName, long nanoTime) {
@@ -16,7 +16,7 @@ class PerformanceMonitor {
     }
 
     public void printStats() {
-        System.out.println("--- Relatório de Performance das Threads ---");
+        System.out.println("---Thread Performance Report ---");
         long maxAvg = 0;
         String slowestThread = "";
 
@@ -28,14 +28,14 @@ class PerformanceMonitor {
             long avg = total / count;
             double avgMs = avg / 1_000_000.0;
             
-            System.out.printf("[%s] Execuções: %d | Média: %.2f ms%n", worker, count, avgMs);
+            System.out.printf("[%s] Executions: %d | Avarage: %.2f ms%n", worker, count, avgMs);
 
             if (avg > maxAvg) {
                 maxAvg = avg;
                 slowestThread = worker;
             }
         }
-        System.out.println(">> Thread mais lenta (Gargalo): " + slowestThread);
+        System.out.println(">> Slowest Thread (bottleneck): " + slowestThread);
         System.out.println("--------------------------------------------");
     }
 }
