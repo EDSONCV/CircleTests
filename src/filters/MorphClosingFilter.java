@@ -8,9 +8,9 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 public class MorphClosingFilter implements ImageFilter {
-    // Tamanho do elemento estruturante (Kernel)
+    // Size of the structural element (Kernel)
     private OptParam kernelSize = new OptParam("Morph_K", 3, 1, 11, 2, true);
-    // Número de iterações (quantas vezes aplicar)
+    // Number of iterations (how many times to apply)
     private OptParam iterations = new OptParam("Morph_Iter", 1, 1, 5, 1, true);
 
     @Override

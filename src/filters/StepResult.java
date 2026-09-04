@@ -2,7 +2,7 @@ package filters;
 
 import org.opencv.core.Mat;
 
-// 3. Resultado de cada etapa
+// 3. Results of each step
 public class StepResult {
     public String stepName;
     public String paramsDescription;

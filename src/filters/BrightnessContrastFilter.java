@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.opencv.core.Mat;
 
-// --- Filtro 3: Ajuste de Brilho/Contraste (Exemplo de pré-tratamento) ---
+// Brightness/Contrast Adjustment (Pre-processing Example) ---
 public class BrightnessContrastFilter implements ImageFilter {
     private OptParam alpha = new OptParam("Contrast", 1.0, 0.5, 3.0, 0.1, false);
     private OptParam beta = new OptParam("Brightness", 0.0, -50, 50, 5, true);

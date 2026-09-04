@@ -7,12 +7,9 @@ import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-// --- Filtro 1: Gaussian Blur ---
+// ---  Gaussian Blur Filter ---
 public class GaussianBlurFilter implements ImageFilter {
-    /*
-    private OptParam kernel = new OptParam("G_Kernel", 5, 1, 9, 2, true);
-    private OptParam sigma = new OptParam("G_Sigma", 2.0, 0.5, 3, 0.5, false);
-*/
+
     private OptParam kernel = new OptParam("G_Kernel", 11, 1, 15, 2, true);
     private OptParam sigma = new OptParam("G_Sigma", 4, 0.5, 4, 0.5, false);
 
@@ -20,20 +17,20 @@ public class GaussianBlurFilter implements ImageFilter {
     public Mat process(Mat input) {
         Mat output = new Mat();
 
-        // 1. Pega o valor do Kernel definido pela IA / Scrambler
+        // Get the Kernel value
         int k = (int) kernel.getValue();
 
-        // 2. TRAVA DE SEGURANÇA: Se por qualquer motivo o número for par, soma 1.
-        // Exemplo: Se a IA enviar 4, vira 5. Se enviar 2, vira 3.
+        // SAFETY LOCK: If for any reason the number is even, add 1.
+        // Example: If the AI sends 4, it becomes 5. If it sends 2, it becomes 3.
         if (k % 2 == 0) {
             k++;
         }
-        // Garante que o Kernel nunca seja zero ou negativo (se k for < 1, vira 1)
+        // Ensures that the Kernel is never zero or negative (if k is < 1, it becomes 1).
         if (k < 1) {
             k = 1;
         }
 
-        // 3. Executa o OpenCV com a certeza de que a matemática não vai quebrar
+        // Run OpenCV with the assurance that the math won't break down.
         Imgproc.GaussianBlur(input, output, new Size(k, k), sigma.getValue());
         return output;
     }

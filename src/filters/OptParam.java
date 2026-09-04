@@ -3,8 +3,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Representa um parâmetro otimizável genérico (Strategy/Command state).
- * Encapsula valor, limites e passo de modificação.
+ * Represents a generic optimizable parameter (Strategy/Command state).
+ * Encapsulates value, limits, and modification step.
  */
 public class OptParam {
     private String name;
@@ -32,8 +32,8 @@ public class OptParam {
         this.value = Math.max(min, value - step);
         enforceConstraints();
     }
-    
-    // Garante regras específicas (ex: kernel ímpar)
+
+    // Ensures specific rules (e.g., odd kernel)
     private void enforceConstraints() {
         if (name.contains("Kernel") && (int)value % 2 == 0) {
             value = (value >= max) ? value - 1 : value + 1;

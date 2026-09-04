@@ -6,7 +6,7 @@ import java.util.List;
 public class CombinatoricsHelper {
 
     /**
-     * Método recursivo genérico para gerar permutações (arranjos) de um tamanho específico.
+     * A generic recursive method for generating permutations (arrangements) of a specific size.
      */
     public static <T> void generatePermutationsOfSize(
             List<Class<? extends T>> original,

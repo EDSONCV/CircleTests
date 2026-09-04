@@ -8,7 +8,7 @@ public class SingleOrderStrategy implements FilterOrderStrategy {
     @Override
     public List<List<Class<? extends ImageFilter>>> generateOrders(List<Class<? extends ImageFilter>> baseFilters) {
         List<List<Class<? extends ImageFilter>>> result = new ArrayList<>();
-        // Adiciona apenas a lista original, sem permutar
+        // Add only the original list, without swapping.
         result.add(new ArrayList<>(baseFilters));
         return result;
     }

@@ -6,7 +6,7 @@ import java.util.List;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
-// --- Filtro 2: Canny Edge Detection (Exemplo de novo módulo) ---
+//  Canny Edge Detection ---
 public class CannyFilter implements ImageFilter {
     private OptParam threshold1 = new OptParam("Canny_T1", 100, 10, 300, 10, true);
     private OptParam threshold2 = new OptParam("Canny_T2", 200, 10, 300, 10, true);

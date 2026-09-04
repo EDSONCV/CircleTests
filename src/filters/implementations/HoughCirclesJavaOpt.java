@@ -37,7 +37,7 @@ public class HoughCirclesJavaOpt {
             Mat image, float dp, float minDist,
             int minRadius, int maxRadius,
             int cannyThreshold, int accThreshold,
-            Mat debugEdges) { // NOVO PARÂMETRO ADICIONADO
+            Mat debugEdges) { // // new parameter for debug
 
         final float finalDp = Math.max(dp, 1.0f);
         final float idp = 1.0f / finalDp;
@@ -53,7 +53,7 @@ public class HoughCirclesJavaOpt {
         Imgproc.Sobel(image, dy, CvType.CV_16S, 0, 1, 3, 1, 0, Core.BORDER_REPLICATE);
         Imgproc.Canny(dx, dy, edges, Math.max(1, cannyThreshold / 2), cannyThreshold, false);
 
-        // EXPORTAÇÃO DA IMAGEM DO CANNY PARA DEPURAÇÃO
+        // Export Canny image for debug
         if (debugEdges != null) {
             edges.copyTo(debugEdges);
         }

@@ -37,7 +37,7 @@ public class HoughCirclesJavaAlt {
             Mat image, double dp, double minDist,
             double minRadius, double maxRadius,
             double cannyThreshold, double perfectionRatio,
-            Mat debugEdges) { // NOVO PARÂMETRO ADICIONADO
+            Mat debugEdges) { // new parameter for debug
 
         final float finalDp = (float) Math.max(dp, 1.0);
         final float idp = 1.0f / finalDp;
@@ -52,7 +52,7 @@ public class HoughCirclesJavaAlt {
         Imgproc.Scharr(image, dy, CvType.CV_16S, 0, 1);
         Imgproc.Canny(dx, dy, edges, cannyThreshold / 2, cannyThreshold, true);
 
-        // EXPORTAÇÃO DA IMAGEM DO CANNY PARA DEPURAÇÃO
+        // Export Canny image for debug
         if (debugEdges != null) {
             edges.copyTo(debugEdges);
         }

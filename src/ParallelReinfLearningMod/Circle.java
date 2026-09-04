@@ -23,10 +23,10 @@ public class Circle {
     }
     //
     public boolean matchesStrict(Circle other, double centerTolerance, double radiusTolerance) {
-        // Distância Euclidiana entre os centros
+        // Euclidean distance between centers
         double distCenter = Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
 
-        // Diferença absoluta entre os raios
+        //Absolute difference between the radius
         double distRadius = Math.abs(this.r - other.r);
 
         return distCenter <= centerTolerance && distRadius <= radiusTolerance;
@@ -63,16 +63,17 @@ public class Circle {
         double angle1 = 2 * Math.acos((r1Sq + d2 - r2Sq) / (2 * r1 * d));
         double angle2 = 2 * Math.acos((r2Sq + d2 - r1Sq) / (2 * r2 * d));
 
-        // Área de Interseção = (Área do Setor 1 - Área do Triângulo 1) + (Área do Setor 2 - Área do Triângulo 2)
+        // Area of Intersection = (Area
+        // of Sector 1 - Area of Triangle 1) + (Area of Sector 2 - Area of Triangle 2)
         double area1 = 0.5 * r1Sq * (angle1 - Math.sin(angle1));
         double area2 = 0.5 * r2Sq * (angle2 - Math.sin(angle2));
         double intersectionArea = area1 + area2;
 
-        // Área Total de Ambos (A + B)
+        // Total area of both (A + B)
         double areaTotalC1 = Math.PI * r1Sq;
         double areaTotalC2 = Math.PI * r2Sq;
 
-        // Fórmula da União: A + B - Interseção
+        // Union formula : A + B - Intersection
         double unionArea = areaTotalC1 + areaTotalC2 - intersectionArea;
 
         return intersectionArea / unionArea;

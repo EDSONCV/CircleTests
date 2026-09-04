@@ -17,7 +17,7 @@ import static filters.implementations.HoughCirclesJavaAlt.houghCirclesAlt;
 public class ModularEnvironment {
     private String imagePath;
     private List<Circle> groundTruth;
-    private ProcessingPipeline pipelinePrototype; // Protótipo (usado apenas para clonagem)
+    private ProcessingPipeline pipelinePrototype; // prototype used for clone
     private Mat originalImage;
     private RewardConfig rewardConfig;
     private Supplier<ProcessingPipeline> pipelineFactory;
@@ -33,7 +33,7 @@ public class ModularEnvironment {
         this.groundTruth = gt;
 
         this.pipelineFactory = pipeFactory;
-        // FABRICA UM PIPELINE EXCLUSIVO PARA ESTA INSTÂNCIA!
+        //MANUFACTURE AN EXCLUSIVE PIPELINE FOR THIS INSTANCE!
         this.localPipeline = pipeFactory.get();
 
         this.rewardConfig = (rConfig != null) ? rConfig : new RewardConfig();
@@ -45,8 +45,8 @@ public class ModularEnvironment {
     }
 
     /**
-     * NOVO CONSTRUTOR (Para Multithread):
-     * Recebe a imagem já carregada na memória (Mat) para evitar leitura do disco a cada thread.
+     * NEW CONSTRUCTOR (For Multithreading):
+     * Receives the image already loaded into memory (Mat) to avoid reading from the disk for each thread.
      */
     public ModularEnvironment(Mat loadedImage, List<Circle> gt, Supplier<ProcessingPipeline> pipeFactory, RewardConfig rConfig) {
         this.imagePath = "in-memory";
@@ -62,29 +62,29 @@ public class ModularEnvironment {
 
 
 
-    // --- MÉTODOS DE DETECÇÃO ---
+    // ---DETECTION METHOD ---
 
 
     /**
-     * Versão Multithread (Safe):
-     * Como a Factory já instanciou um 'localPipeline' exclusivo para esta Thread,
-     * não precisamos de clonar. Basta sincronizar os parâmetros locais e executar.
-     * @param paramsForThisRun A lista de parâmetros (variáveis de decisão) para este teste específico.
+     * Multithreaded Version (Safe):
+     * Since the Factory has already instantiated a unique 'localPipeline' for this Thread,
+     * we don't need to clone. Just synchronize the local parameters and run.
+     * @param paramsForThisRun The list of parameters (decision variables) for this specific test.
      */
     public List<Circle> runDetection(List<OptParam> paramsForThisRun) {
 
-        // 1. Sincroniza os novos parâmetros diretamente no pipeline exclusivo desta Thread
+      //  1. Synchronize the new parameters directly in this Thread's dedicated pipeline.
         this.localPipeline.syncParameters(paramsForThisRun);
 
-        // 2. Executa o algoritmo OpenCV
+        //2. Executes the OpenCV algorithm.
         return runDetectionInternal(this.localPipeline);
     }
 
     /**
-     * Método interno privado que executa a lógica comum (Hough) dado um pipeline já configurado.
+     * Private internal method that executes common logic (Hough) given an already configured pipeline.
      */
     private List<Circle> runDetectionInternal(ProcessingPipeline pipeToUse) {
-        // A. Executa os filtros (Blur, Canny, etc.)
+        // A. Execute filterss (Blur, Canny, etc.)
         Mat processedImage = pipeToUse.executePipeline(originalImage);
 
         List<Circle> detectedList = new ArrayList<>();
@@ -94,7 +94,7 @@ public class ModularEnvironment {
 
 
                 // B. Runs HoughCircles
-                // Note que usamos 'pipeToUse' (local), não 'this.pipelinePrototype'
+                // Note that  'pipeToUse' is used (local), not  'this.pipelinePrototype'
                 // native implementation
 
 
@@ -129,7 +129,7 @@ public class ModularEnvironment {
         } catch (Exception e) {
             // implement Log
         } finally {
-            // C. Liberação de memória (Crítico em Multithread)
+            // C. free memory  (Critical on multithread)
             if (processedImage != null) processedImage.release();
             if (circlesMat != null) circlesMat.release();
         }
@@ -145,39 +145,39 @@ public class ModularEnvironment {
         int detectedCount = detected.size();
         int truthCount = groundTruth.size();
 
-        // 1. Sanity Check (mantido igual)
+        // 1. Sanity Check
         int dynamicLimit = Math.max(rewardConfig.getSanityLimitAbsolute(), truthCount * rewardConfig.getSanityLimitMultiplier());
         if (detectedCount > dynamicLimit) {
             return rewardConfig.getSanityFailPenalty() - (detectedCount * rewardConfig.getSanityExcessWeight());
         }
 
         double reward = 0;
-        double sumIoU = 0.0; // O SEU INDICADOR QUANTITATIVO GLOBAL
+        double sumIoU = 0.0; //  GLOBAL QUANTITATIVE INDICATOR
         Set<Circle> matchedGroundTruth = new HashSet<>();
 
           // new version with IoT and center as reward
 
-        // 2. Mapeamento Contínuo (Híbrido)
+        // 2. Contiunuous mapping (Hibrid)
         for (Circle det : detected) {
             Circle bestMatch = null;
             double bestHybridScore = 0.0;
-            double bestIouForLog = 0.0; // Guardamos o IoU real apenas para a estatística mIoU
+            double bestIouForLog = 0.0; // we save the real IoU for  mIoU statistics
 
             for (Circle truth : groundTruth) {
-                // 1. Calcula o IoU (0.0 a 1.0)
+                // 1. Calculates o IoU (0.0 a 1.0)
                 double iou = det.getIoU(truth);
 
-                // 2. Calcula a Distância Euclidiana linear
+                // 2. Calculates the mean Euclidian distance
                 double dist = Math.sqrt(Math.pow(det.x - truth.x, 2) + Math.pow(det.y - truth.y, 2));
 
-                // 3. Converte a Distância numa nota (0.0 a 1.0).
-                // 1.0 = Centro exato | 0.0 = Muito longe
+                // 3. Converts the distance into a grade (0.0 a 1.0).
+                // 1.0 = exact center | 0.0 = far away
                 double distScore = 0.0;
                 if (dist < rewardConfig.getMaxCenterDistance()) {
                     distScore = 1.0 - (dist / rewardConfig.getMaxCenterDistance());
                 }
 
-                // 4. A MÁGICA: Nota Híbrida Ponderada
+                // 4.  Hybrid weighted grade
                 double hybridScore = (iou * rewardConfig.getWeightIoU()) +
                         (distScore * rewardConfig.getWeightCenter());
 
@@ -188,14 +188,14 @@ public class ModularEnvironment {
                 }
             }
 
-            // Se houve pontuação Híbrida (ou tocou, ou está no raio de atração)
+            // If there was Hybrid scoring (either it touched, or it is within the radius of attraction)
             if (bestHybridScore > 0.0) {
                 if (!matchedGroundTruth.contains(bestMatch)) {
 
-                    // A recompensa da IA agora é guiada pela nota híbrida!
+                    // The AI reward is now guided by the hybrid note!
                     reward += (rewardConfig.getMatchBonus() * bestHybridScore);
 
-                    // Mas a métrica oficial de tela continua sendo apenas a geometria (IoU)
+                  //   But the official screen metric remains only geometry (IoU).
                     sumIoU += bestIouForLog;
 
                     matchedGroundTruth.add(bestMatch);
@@ -203,17 +203,17 @@ public class ModularEnvironment {
                     reward += rewardConfig.getDuplicatePenalty();
                 }
             } else {
-                // Se está longe demais e não toca: Ruído absoluto
+                // If it's too far away and doesn't touch:  Absolute noise
                 reward += rewardConfig.getNoisePenalty();
             }
         }
 
 
-        // 3. Punição por Omissão (Penaliza os que nem foram tocados)
+        // 3. Punishment for Omission (Penalizes those who weren't even touched)
         int missed = truthCount - matchedGroundTruth.size();
         reward -= (missed * rewardConfig.getMissPenalty());
 
-        // 4. Punição Exponencial por Excesso de ruído
+        // 4.Exponential Punishment for Excessive Noise
         int excess = Math.max(0, detectedCount - truthCount);
         if (excess > 0) {
             reward -= (Math.pow(excess, rewardConfig.getExcessPenaltyExponent()) * rewardConfig.getExcessPenaltyWeight());
@@ -246,23 +246,23 @@ public class ModularEnvironment {
             }
         }
 
-        // Calcula e devolve a média do IoU (mIoU) da imagem face ao gabarito
+        // Calculates and returns the average IoU (mIoU) of the image relative to the template.
         return sumIoU / groundTruth.size();
     }
 
-    // Agora, atualize o método isGoalReached para ficar muito mais limpo:
+   // Now, update the isGoalReached method to make it much cleaner:
     public boolean isGoalReached(List<Circle> detected) {
-        // Exige que a quantidade bata certo
+        // Requires the quantity to be correct.
         if (detected.size() != groundTruth.size()) {
             return false;
         }
-        // Usa o novo método para verificar se atingiu a excelência configurada
+        // Use the new method to verify if the configured excellence has been achieved.
         return calculateMeanIoU(detected) >= rewardConfig.getTargetMeanIoU();
     }
 
     /**
-     * Calcula a Distância Média e a Nota Híbrida Média para fins de Log e Análise.
-     * Retorna um array onde: [0] = Distância Euclidiana Média, [1] = Nota Híbrida Média
+     * Calculates the Average Distance and Average Hybrid Score for Logging and Analysis purposes.
+     * Returns an array where: [0] = Average Euclidean Distance, [1] = Average Hybrid Score
      */
     public double[] calculateHybridMetricsForLog(List<Circle> detected) {
         if (groundTruth.isEmpty() || detected.isEmpty()) {
@@ -288,14 +288,14 @@ public class ModularEnvironment {
 
                 double hybridScore = (iou * rewardConfig.getWeightIoU()) + (distScore * rewardConfig.getWeightCenter());
 
-                // Guardamos a distância atrelada à melhor nota híbrida
+               // We maintain the distance linked to the best hybrid score.
                 if (hybridScore > bestHybridScore) {
                     bestHybridScore = hybridScore;
                     distAtBestHybrid = dist;
                 }
             }
 
-            // Só contabilizamos se entrou no radar (nota > 0)
+            // We only count if it entered the radar (score > 0)
             if (bestHybridScore > 0.0) {
                 sumHybrid += bestHybridScore;
                 sumDist += distAtBestHybrid;
@@ -305,11 +305,11 @@ public class ModularEnvironment {
 
         if (validMatches == 0) return new double[]{0.0, 0.0};
 
-        // Retorna as médias
+        // Return the average
         return new double[]{ (sumDist / validMatches), (sumHybrid / validMatches) };
     }
 
-    // Getters para visualização
+    // Getters for viewing
     public Mat getOriginalImage() { return originalImage; }
    // public ProcessingPipeline getPipelinePrototype() { return pipelinePrototype; }
 
@@ -318,26 +318,26 @@ public class ModularEnvironment {
 	}
 
     public java.util.List<Circle> getGroundTruth() {
-        return this.groundTruth;   // Substitua pelo nome exato da sua lista de gabaritos
+        return this.groundTruth;
     }
 
-    public ProcessingPipeline getPipelinePrototype() { return this.localPipeline; } // Retorna o local
-    public Supplier<ProcessingPipeline> getPipelineFactory() { return this.pipelineFactory; } // Repassa a fábrica
+    public ProcessingPipeline getPipelinePrototype() { return this.localPipeline; } // Returns the local
+    public Supplier<ProcessingPipeline> getPipelineFactory() { return this.pipelineFactory; } // /sends the factory
     /**
-     * Atalho para rodar a detecção com um conjunto de parâmetros e já retornar a nota (score).
-     * Usado pela camada superior de otimização de permutações.
+     * Shortcut to run detection with a set of parameters and return the score.
+     * Used by the upper layer of permutation optimization.
      */
     public double evaluate(List<OptParam> params) {
-        // 1. Roda a detecção com os parâmetros fornecidos
+        // 1. Run the detection with the provided parameters
         List<Circle> detected = this.runDetection(params);
 
-        // 2. Calcula e retorna a pontuação final
+        // 2. Calculates and returns the final score
         return this.calculateReward(detected);
     }
 
     /**
-     * Limpa a imagem base da memória nativa do OpenCV (C++).
-     * Essencial para evitar vazamento de memória ao rodar dezenas de permutações.
+     * Clears the base image from the native OpenCV (C++) memory.
+     * Essential to prevent memory leaks when running dozens of permutations.
      */
     public void releaseResources() {
         if (this.originalImage != null && !this.originalImage.empty()) {

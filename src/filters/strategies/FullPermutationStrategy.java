@@ -9,7 +9,7 @@ public class FullPermutationStrategy implements FilterOrderStrategy {
     public List<List<Class<? extends ImageFilter>>> generateOrders(List<Class<? extends ImageFilter>> baseFilters) {
         List<List<Class<? extends ImageFilter>>> result = new ArrayList<>();
 
-        // Pede ao Helper para gerar combinações usando o tamanho total da lista
+        //Ask the Helper to generate combinations using the total size of the list.
         int targetSize = baseFilters.size();
         CombinatoricsHelper.generatePermutationsOfSize(baseFilters, new ArrayList<>(), result, targetSize);
 

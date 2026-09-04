@@ -8,22 +8,22 @@ import java.util.Random;
 import filters.OptParam;
 
 class DynamicRLAgent {
-    // Mapa Q: Estado(String) -> Mapa<IndiceParametro + Direcao, ValorQ>
-    // Ação simplificada: String "Index_DIRECTION" (ex: "0_UP", "3_DOWN")
+    // Map Q: State(String) -> Map<ParameterIntex + Direction, Q Value>
+    // Simplified action: String "Index_DIRECTION" (ex: "0_UP", "3_DOWN")
     private Map<String, Map<String, Double>> qTable = new HashMap<>();
     private Random random = new Random();
     private double epsilon = 0.5;
     private double learningRate = 0.1;
     private double discountFactor = 0.9;
-    
-    // A lista de parâmetros que o agente controla
+
+    //The list of parameters that the agent controls.
     private List<OptParam> managedParams;
 
     public DynamicRLAgent(List<OptParam> params) {
         this.managedParams = params;
     }
 
-    // Escolhe uma ação: Qual parâmetro mexer e em qual direção
+    // Choose an action: Which parameter to change and in which direction
     public String chooseAction(String state) {
         if (random.nextDouble() < epsilon) {
             return randomAction();
@@ -32,7 +32,7 @@ class DynamicRLAgent {
         Map<String, Double> actions = qTable.computeIfAbsent(state, k -> new HashMap<>());
         if (actions.isEmpty()) return randomAction();
 
-        // Retorna a melhor ação (Greedy)
+// Returns the best action (Greedy)
         return actions.entrySet().stream()
                 .max(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
@@ -40,16 +40,16 @@ class DynamicRLAgent {
     }
 
     /**
-     * Força o agente a abandonar o conhecimento atual temporariamente
-     * e tomar decisões radicalmente aleatórias para escapar de um ótimo local.
+     * Forces the agent to temporarily abandon current knowledge
+     * and make radically random decisions to escape a local optimum.
      */
     public void triggerExplorationBurst() {
-        // Volta a taxa de exploração para 90% (ações totalmente aleatórias)
+// Return the exploration rate to 90% (completely random actions)
         this.epsilon = 0.90;
-        System.out.println("   [Agente RL] Taxa de exploração resetada para 90%!");
+        System.out.println("   [ RL agent ] Exploration reseted to 90%!");
     }
 
- // Certifique-se que o método randomAction é público ou acessível internamente
+ // Make sure the randomAction method is public or internally accessible.
     private String randomAction() {
         if (managedParams.isEmpty()) return "0_UP"; // Fallback
         
@@ -58,7 +58,7 @@ class DynamicRLAgent {
         
         return paramIndex + "_" + direction;
     }
-    // Executa a ação escolhida na lista de parâmetros
+    // Executes the choosen action on the parameters list
     public void executeAction(String actionKey) {
         String[] parts = actionKey.split("_");
         int idx = Integer.parseInt(parts[0]);
@@ -68,19 +68,19 @@ class DynamicRLAgent {
         if (dir.equals("UP")) target.increase();
         else target.decrease();
     }
-    
+
     /**
-     * Escolhe uma ação para uma simulação paralela.
-     * @param batchIndex O índice do worker (0, 1, 2...).
-     * Pode ser usado para criar padrões (ex: worker 0 sempre testa UP, worker 1 testa DOWN).
-     * @return Uma string de ação (ex: "3_UP").
+     * Choose an action for a parallel simulation.
+     * @param batchIndex The index of the worker (0, 1, 2...).
+     * Can be used to create patterns (e.g. worker 0 always tests UP, worker 1 tests DOWN).
+     * @return An action string (e.g. "3_UP").
      */
     public String chooseActionForSim(int batchIndex) {
-        // Estratégia: Exploração Pura (Random Mutation)
-        // O objetivo no passo paralelo é gerar diversidade para descobrir novos gradientes.
+        // Strategy: Pure Exploration (Random Mutation)
+       // The goal in the parallel step is to generate diversity to discover new gradients.
         return randomAction();
     }
-    // Atualiza Q-Table
+    // Updates Q-Table
     public void learn(String state, String action, double reward, String nextState) {
         Map<String, Double> qValues = qTable.computeIfAbsent(state, k -> new HashMap<>());
         Map<String, Double> nextQValues = qTable.computeIfAbsent(nextState, k -> new HashMap<>());

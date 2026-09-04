@@ -6,7 +6,7 @@ import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 
 /**
- * Interface Strategy: Todo filtro deve saber se processar e listar seus parâmetros.
+ * Interface Strategy: Every filter should know how to process itself and list its parameters.
  */
 public interface ImageFilter {
     Mat process(Mat input);
